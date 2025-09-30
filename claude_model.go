@@ -60,3 +60,7 @@ func (p *ClaudeModel) Name() string {
 func (p *ClaudeModel) GenerateEmbeddings(ctx context.Context, req *EmbeddingRequest) (*EmbeddingResponse, error) {
 	return nil, fmt.Errorf("embeddings are not supported by Claude models")
 }
+
+func (p *ClaudeModel) GenerateImage(ctx context.Context, req *ImageRequest) (*ImageResponse, error) {
+	return nil, fmt.Errorf("image generation is not supported by Claude models")
+}

@@ -59,3 +59,7 @@ func (p *DeepSeekModel) Name() string {
 func (p *DeepSeekModel) GenerateEmbeddings(ctx context.Context, req *EmbeddingRequest) (*EmbeddingResponse, error) {
 	return nil, fmt.Errorf("embeddings are not supported by DeepSeek models")
 }
+
+func (p *DeepSeekModel) GenerateImage(ctx context.Context, req *ImageRequest) (*ImageResponse, error) {
+	return nil, fmt.Errorf("image generation is not supported by DeepSeek models")
+}

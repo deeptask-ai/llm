@@ -153,3 +153,7 @@ func (p *OpenRouterModel) Name() string {
 func (p *OpenRouterModel) GenerateEmbeddings(ctx context.Context, req *EmbeddingRequest) (*EmbeddingResponse, error) {
 	return nil, fmt.Errorf("embeddings are not supported by OpenRouter models")
 }
+
+func (p *OpenRouterModel) GenerateImage(ctx context.Context, req *ImageRequest) (*ImageResponse, error) {
+	return nil, fmt.Errorf("image generation is not supported by OpenRouter models")
+}

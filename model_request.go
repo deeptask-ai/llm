@@ -9,7 +9,6 @@ type ModelRequest struct {
 	Messages     []*Message
 	Config       *ModelConfig
 	Tools        []Tool
-	Metadata     map[string]string
 	Cost         bool
 }
 
@@ -61,10 +60,23 @@ type EmbeddingRequest struct {
 	Model    string                `json:"model"`
 	Contents []string              `json:"contents"`
 	Config   *EmbeddingModelConfig `json:"config,omitempty"`
-	Metadata map[string]string     `json:"metadata,omitempty"`
 }
 
 type EmbeddingModelConfig struct {
 	Dimensions     int64                   `json:"dimensions,omitempty"`
 	EncodingFormat EmbeddingEncodingFormat `json:"encoding_format,omitempty"`
+}
+
+type ImageRequest struct {
+	Model        string             `json:"model"`
+	Instructions string             `json:"instructions"`
+	Artifacts    []*MessageArtifact `json:"artifacts"`
+	Config       *ImageModelConfig  `json:"config,omitempty"`
+}
+
+type ImageModelConfig struct {
+	Size           string `json:"size,omitempty"`
+	Quality        string `json:"quality,omitempty"`
+	Style          string `json:"style,omitempty"`
+	ResponseFormat string `json:"response_format,omitempty"`
 }

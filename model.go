@@ -24,7 +24,8 @@ type ModelPricing struct {
 type Model interface {
 	Name() string
 	SupportedModels() []*ModelInfo
-	StreamGenerateContent(ctx context.Context, req *ModelRequest) (StreamModelResponse, error)
+	GenerateStream(ctx context.Context, req *ModelRequest) (StreamModelResponse, error)
 	GenerateContent(ctx context.Context, req *ModelRequest) (*ModelResponse, error)
 	GenerateEmbeddings(ctx context.Context, req *EmbeddingRequest) (*EmbeddingResponse, error)
+	GenerateImage(ctx context.Context, req *ImageRequest) (*ImageResponse, error)
 }

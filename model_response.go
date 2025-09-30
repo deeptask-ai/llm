@@ -13,7 +13,6 @@ type MessageArtifact struct {
 	Name        string            `json:"name" binding:"required"`
 	ContentType string            `json:"contentType" binding:"required"`
 	Description string            `json:"description"`
-	Slug        string            `json:"slug" binding:"required"`
 	Content     []byte            `json:"content"`
 	Metadata    map[string]string `json:"metadata"`
 }
@@ -131,4 +130,10 @@ type EmbeddingResponse struct {
 	Embeddings []Embedding `json:"embeddings"`
 	Usage      *TokenUsage `json:"usage,omitempty"`
 	Cost       *float64    `json:"cost,omitempty"`
+}
+
+type ImageResponse struct {
+	Output []byte      `json:"output"`
+	Usage  *TokenUsage `json:"usage,omitempty"`
+	Cost   *float64    `json:"cost,omitempty"`
 }

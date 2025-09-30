@@ -3,6 +3,7 @@ package llmclient
 import (
 	"context"
 	_ "embed"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -19,8 +20,6 @@ type OpenAIModel struct {
 type OpenAIModelConfig struct {
 	APIKey string
 }
-
-var _ Model = (*OpenAIModel)(nil)
 
 func NewOpenAIModel(config OpenAIModelConfig) (*OpenAIModel, error) {
 	if config.APIKey == "" {
@@ -55,7 +54,7 @@ func (p *OpenAIModel) SupportedModels() []*ModelInfo {
 	return models
 }
 
-func (p *OpenAIModel) StreamGenerateContent(ctx context.Context, req *ModelRequest) (StreamModelResponse, error) {
+func (p *OpenAIModel) GenerateStream(ctx context.Context, req *ModelRequest) (StreamModelResponse, error) {
 	params := ToChatCompletionParams(req.Model, req.Instructions, req.Messages, req.Config)
 	stream := p.client.Chat.Completions.NewStreaming(ctx, params)
 	chunkChan := make(chan StreamChunk, 1)
@@ -160,6 +159,92 @@ func (p *OpenAIModel) GenerateEmbeddings(ctx context.Context, req *EmbeddingRequ
 	// For now, return a not implemented error
 	// This will be properly implemented once the OpenAI SDK interface is confirmed
 	return nil, fmt.Errorf("GenerateEmbeddings not yet implemented for OpenAI model")
+}
+
+func (p *OpenAIModel) GenerateImage(ctx context.Context, req *ImageRequest) (*ImageResponse, error) {
+	if req.Instructions == "" {
+		return nil, fmt.Errorf("no instructions provided for image generation")
+	}
+
+	// Set up parameters for image generation using instructions as prompt
+	params := openai.ImageGenerateParams{
+		Prompt:         req.Instructions,
+		Model:          openai.ImageModelDallE3,                         // Default to DALL-E 3
+		ResponseFormat: openai.ImageGenerateParamsResponseFormatB64JSON, // Return base64 to get []byte
+		N:              openai.Int(1),
+	}
+
+	// Apply config if provided
+	if req.Config != nil {
+		if req.Config.Size != "" {
+			// Map size strings to OpenAI size constants
+			switch req.Config.Size {
+			case "1024x1024":
+				params.Size = openai.ImageGenerateParamsSize1024x1024
+			case "1792x1024":
+				params.Size = openai.ImageGenerateParamsSize1792x1024
+			case "1024x1792":
+				params.Size = openai.ImageGenerateParamsSize1024x1792
+			}
+		}
+		if req.Config.Quality != "" {
+			switch req.Config.Quality {
+			case "standard":
+				params.Quality = openai.ImageGenerateParamsQualityStandard
+			case "hd":
+				params.Quality = openai.ImageGenerateParamsQualityHD
+			}
+		}
+		if req.Config.Style != "" {
+			switch req.Config.Style {
+			case "vivid":
+				params.Style = openai.ImageGenerateParamsStyleVivid
+			case "natural":
+				params.Style = openai.ImageGenerateParamsStyleNatural
+			}
+		}
+	}
+
+	// Generate the image
+	image, err := p.client.Images.Generate(ctx, params)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate image: %w", err)
+	}
+
+	if len(image.Data) == 0 {
+		return nil, fmt.Errorf("no image data returned")
+	}
+
+	// Decode base64 image data
+	imageBytes, err := base64.StdEncoding.DecodeString(image.Data[0].B64JSON)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode image data: %w", err)
+	}
+
+	// Create usage information
+	usage := &TokenUsage{
+		TotalImages:   1,
+		TotalRequests: 1,
+	}
+
+	// Calculate cost if requested - image generation has fixed pricing
+	var cost *float64
+	if req.Config != nil {
+		modelInfo := p.getModelInfo("dall-e-3") // Use DALL-E 3 pricing
+		if modelInfo != nil {
+			imagePrice, err := strconv.ParseFloat(modelInfo.Pricing.Image, 64)
+			if err == nil {
+				totalCost := imagePrice
+				cost = &totalCost
+			}
+		}
+	}
+
+	return &ImageResponse{
+		Output: imageBytes,
+		Usage:  usage,
+		Cost:   cost,
+	}, nil
 }
 
 func ToChatCompletionParams(model string, instructions string, messages []*Message, config *ModelConfig) openai.ChatCompletionNewParams {

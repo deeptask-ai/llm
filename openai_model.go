@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
+	"strconv"
 	"text/template"
 )
 
@@ -103,10 +104,17 @@ func (p *OpenAIModel) StreamGenerateContent(ctx context.Context, req *ModelReque
 			TotalCacheWriteTokens: 0,
 		}
 
-		// Send usage information at the end (no cost calculation for OpenAI)
+		// Calculate cost if requested
+		var cost *float64
+		if req.Cost {
+			modelInfo := p.getModelInfo(req.Model)
+			cost = CalculateCost(modelInfo, usage)
+		}
+
+		// Send usage information at the end
 		chunkChan <- StreamUsageChunk{
 			Usage: usage,
-			Cost:  nil,
+			Cost:  cost,
 		}
 	}()
 
@@ -134,11 +142,19 @@ func (p *OpenAIModel) GenerateContent(ctx context.Context, req *ModelRequest) (*
 		TotalCacheReadTokens:  resp.Usage.PromptTokensDetails.CachedTokens,
 		TotalCacheWriteTokens: 0,
 	}
+
+	// Calculate cost if requested
+	var cost *float64
+	if req.Cost {
+		modelInfo := p.getModelInfo(req.Model)
+		cost = CalculateCost(modelInfo, usage)
+	}
+
 	output := resp.Choices[0].Message.Content
 	return &ModelResponse{
 		Output: output,
 		Usage:  usage,
-		Cost:   nil,
+		Cost:   cost,
 	}, nil
 }
 
@@ -243,6 +259,63 @@ func ToChatCompletionMessage(msg *Message) openai.ChatCompletionMessageParamUnio
 	} else {
 		panic("unknown role")
 	}
+}
+
+// CalculateCost calculates the cost based on token usage and model pricing information
+// This function can be shared across all model implementations
+func CalculateCost(modelInfo *ModelInfo, usage *TokenUsage) *float64 {
+	if modelInfo == nil {
+		return nil
+	}
+
+	totalCost := 0.0
+
+	// Calculate input token costs
+	cacheReadPrice, err := strconv.ParseFloat(modelInfo.Pricing.InputCacheRead, 64)
+	if err != nil {
+		cacheReadPrice = 0.0
+	}
+	promptPrice, err := strconv.ParseFloat(modelInfo.Pricing.Prompt, 64)
+	if err != nil {
+		return nil
+	}
+
+	if cacheReadPrice > 0.0 {
+		totalInputTokens := usage.TotalInputTokens - usage.TotalCacheReadTokens
+		totalCost += (float64(totalInputTokens) / 1000000.0) * promptPrice
+		totalCost += (float64(usage.TotalCacheReadTokens) / 1000000.0) * cacheReadPrice
+	} else {
+		totalCost += (float64(usage.TotalInputTokens) / 1000000.0) * promptPrice
+	}
+
+	// Calculate internal reasoning token costs
+	internalReasoningPrice, err := strconv.ParseFloat(modelInfo.Pricing.InternalReasoning, 64)
+	if err != nil {
+		internalReasoningPrice = 0.0
+	}
+	if internalReasoningPrice > 0.0 {
+		totalCost += (float64(usage.TotalReasoningTokens) / 1000000.0) * internalReasoningPrice
+	}
+
+	// Calculate completion token costs
+	completionPrice, err := strconv.ParseFloat(modelInfo.Pricing.Completion, 64)
+	if err != nil {
+		return nil
+	}
+	totalCost += (float64(usage.TotalOutputTokens) / 1000000.0) * completionPrice
+
+	return &totalCost
+}
+
+// getModelInfo returns the ModelInfo for a given model from the supported models
+func (p *OpenAIModel) getModelInfo(modelID string) *ModelInfo {
+	models := p.SupportedModels()
+	for _, model := range models {
+		if model.ID == modelID {
+			return model
+		}
+	}
+	return nil
 }
 
 func GetPrompts(prompt string, params map[string]interface{}) (string, error) {

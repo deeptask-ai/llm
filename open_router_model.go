@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
@@ -123,43 +122,25 @@ func (p *OpenRouterModel) SupportedModels() []*ModelInfo {
 	return models
 }
 
-func (p *OpenRouterModel) calculateCost(model string, usage *TokenUsage) *float64 {
-	modelInfo, exists := p.models[model]
+// getModelInfo returns the ModelInfo for a given model from OpenRouter's model list
+func (p *OpenRouterModel) getModelInfo(modelID string) *ModelInfo {
+	openRouterModel, exists := p.models[modelID]
 	if !exists {
 		return nil
 	}
 
-	totalCost := 0.0
-
-	cacheReadPrice, err := strconv.ParseFloat(modelInfo.Pricing.InputCacheRead, 64)
-	if err != nil {
-		cacheReadPrice = 0.0
+	return &ModelInfo{
+		ID:   openRouterModel.ID,
+		Name: openRouterModel.Name,
+		Pricing: ModelPricing{
+			Prompt:            openRouterModel.Pricing.Prompt,
+			Completion:        openRouterModel.Pricing.Completion,
+			Request:           openRouterModel.Pricing.Request,
+			Image:             openRouterModel.Pricing.Image,
+			WebSearch:         openRouterModel.Pricing.WebSearch,
+			InternalReasoning: openRouterModel.Pricing.InternalReasoning,
+			InputCacheRead:    openRouterModel.Pricing.InputCacheRead,
+			InputCacheWrite:   openRouterModel.Pricing.InputCacheWrite,
+		},
 	}
-	promptPrice, err := strconv.ParseFloat(modelInfo.Pricing.Prompt, 64)
-	if err != nil {
-		return nil
-	}
-	if cacheReadPrice > 0.0 {
-		totalInputTokens := usage.TotalInputTokens - usage.TotalCacheReadTokens
-		totalCost += (float64(totalInputTokens) / 1000000.0) * promptPrice
-		totalCost += (float64(usage.TotalCacheReadTokens) / 1000000.0) * cacheReadPrice
-	} else {
-		totalCost += (float64(usage.TotalInputTokens) / 1000000.0) * promptPrice
-	}
-
-	internalReasoningPrice, err := strconv.ParseFloat(modelInfo.Pricing.InternalReasoning, 64)
-	if err != nil {
-		internalReasoningPrice = 0.0
-	}
-	if internalReasoningPrice > 0.0 {
-		totalCost += (float64(usage.TotalReasoningTokens) / 1000000.0) * internalReasoningPrice
-	}
-
-	completionPrice, err := strconv.ParseFloat(modelInfo.Pricing.Completion, 64)
-	if err != nil {
-		return nil
-	}
-	totalCost += (float64(usage.TotalOutputTokens) / 1000000.0) * completionPrice
-
-	return &totalCost
 }

@@ -10,6 +10,7 @@ type ModelRequest struct {
 	Config       *ModelConfig
 	Tools        []Tool
 	Metadata     map[string]string
+	Cost         bool
 }
 
 type MessageRole string

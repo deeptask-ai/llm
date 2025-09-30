@@ -1,10 +1,10 @@
-# LLMClient
+# EasyLLM
 
-A unified Go client library for interacting with multiple Large Language Model (LLM) providers through a consistent interface. LLMClient abstracts the complexities of different LLM APIs, providing a seamless experience for developers working with AI models.
+A unified Go client library for interacting with multiple Large Language Model (LLM) providers through a consistent interface. EasyLLM abstracts the complexities of different LLM APIs, providing a seamless experience for developers working with AI models.
 
 [![Go Version](https://img.shields.io/badge/Go-1.24.4+-blue.svg)](https://golang.org)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Go Report Card](https://goreportcard.com/badge/github.com/easymvp/llmclient)](https://goreportcard.com/report/github.com/easymvp/llmclient)
+[![Go Report Card](https://goreportcard.com/badge/github.com/easymvp/easyllm)](https://goreportcard.com/report/github.com/easymvp/easyllm)
 
 ## Features
 
@@ -39,7 +39,7 @@ A unified Go client library for interacting with multiple Large Language Model (
 ## Installation
 
 ```bash
-go get github.com/easymvp/llmclient
+go get github.com/easymvp/easyllm
 ```
 
 ## Quick Start
@@ -54,12 +54,12 @@ import (
     "fmt"
     "log"
 
-    "github.com/easymvp/llmclient"
+    "github.com/easymvp/easyllm"
 )
 
 func main() {
     // Initialize OpenAI client
-    client, err := llmclient.NewOpenAIModel(llmclient.OpenAIModelConfig{
+    client, err := easyllm.NewOpenAIModel(easyllm.OpenAIModelConfig{
         APIKey: "your-openai-api-key",
     })
     if err != nil {
@@ -67,11 +67,11 @@ func main() {
     }
 
     // Create a request
-    req := &llmclient.ModelRequest{
+    req := &easyllm.ModelRequest{
         Model: "gpt-4",
-        Messages: []*llmclient.Message{
+        Messages: []*easyllm.Message{
             {
-                Role:    llmclient.MessageRoleUser,
+                Role:    easyllm.MessageRoleUser,
                 Content: "What is the capital of France?",
             },
         },
@@ -92,15 +92,15 @@ func main() {
 
 ```go
 func streamExample() {
-    client, _ := llmclient.NewOpenAIModel(llmclient.OpenAIModelConfig{
+    client, _ := easyllm.NewOpenAIModel(easyllm.OpenAIModelConfig{
         APIKey: "your-api-key",
     })
 
-    req := &llmclient.ModelRequest{
+    req := &easyllm.ModelRequest{
         Model: "gpt-4",
-        Messages: []*llmclient.Message{
+        Messages: []*easyllm.Message{
             {
-                Role:    llmclient.MessageRoleUser,
+                Role:    easyllm.MessageRoleUser,
                 Content: "Write a short story about AI",
             },
         },
@@ -113,10 +113,10 @@ func streamExample() {
 
     for chunk := range stream {
         switch chunk.Type() {
-        case llmclient.StreamChunkTypeText:
-            fmt.Print(chunk.(*llmclient.StreamTextChunk).Text)
-        case llmclient.StreamChunkTypeUsage:
-            usage := chunk.(*llmclient.StreamUsageChunk).Usage
+        case easyllm.StreamChunkTypeText:
+            fmt.Print(chunk.(*easyllm.StreamTextChunk).Text)
+        case easyllm.StreamChunkTypeUsage:
+            usage := chunk.(*easyllm.StreamUsageChunk).Usage
             fmt.Printf("\nTokens used: %d\n", usage.TotalTokens)
         }
     }
@@ -127,29 +127,29 @@ func streamExample() {
 
 ```go
 func multiProviderExample() {
-    var models []llmclient.Model
+    var models []easyllm.Model
 
     // Add multiple providers
-    openai, _ := llmclient.NewOpenAIModel(llmclient.OpenAIModelConfig{
+    openai, _ := easyllm.NewOpenAIModel(easyllm.OpenAIModelConfig{
         APIKey: "openai-key",
     })
     models = append(models, openai)
 
-    claude, _ := llmclient.NewClaudeModel(llmclient.ClaudeModelConfig{
+    claude, _ := easyllm.NewClaudeModel(easyllm.ClaudeModelConfig{
         APIKey: "claude-key",
     })
     models = append(models, claude)
 
-    gemini, _ := llmclient.NewGeminiModel(llmclient.GeminiModelConfig{
+    gemini, _ := easyllm.NewGeminiModel(easyllm.GeminiModelConfig{
         APIKey: "gemini-key",
     })
     models = append(models, gemini)
 
-    req := &llmclient.ModelRequest{
+    req := &easyllm.ModelRequest{
         Model: "gpt-4", // or "claude-3-sonnet", "gemini-pro", etc.
-        Messages: []*llmclient.Message{
+        Messages: []*easyllm.Message{
             {
-                Role:    llmclient.MessageRoleUser,
+                Role:    easyllm.MessageRoleUser,
                 Content: "Explain quantum computing",
             },
         },
@@ -185,19 +185,19 @@ func (w WeatherTool) Parameters() interface{} {
 }
 
 func functionCallingExample() {
-    client, _ := llmclient.NewOpenAIModel(llmclient.OpenAIModelConfig{
+    client, _ := easyllm.NewOpenAIModel(easyllm.OpenAIModelConfig{
         APIKey: "your-api-key",
     })
 
-    req := &llmclient.ModelRequest{
+    req := &easyllm.ModelRequest{
         Model: "gpt-4",
-        Messages: []*llmclient.Message{
+        Messages: []*easyllm.Message{
             {
-                Role:    llmclient.MessageRoleUser,
+                Role:    easyllm.MessageRoleUser,
                 Content: "What's the weather like in Tokyo?",
             },
         },
-        Tools: []llmclient.Tool{WeatherTool{}},
+        Tools: []easyllm.Tool{WeatherTool{}},
     }
 
     resp, _ := client.GenerateContent(context.Background(), req)
@@ -213,11 +213,11 @@ func functionCallingExample() {
 
 ```go
 func embeddingsExample() {
-    client, _ := llmclient.NewOpenAIModel(llmclient.OpenAIModelConfig{
+    client, _ := easyllm.NewOpenAIModel(easyllm.OpenAIModelConfig{
         APIKey: "your-api-key",
     })
 
-    req := &llmclient.EmbeddingRequest{
+    req := &easyllm.EmbeddingRequest{
         Model: "text-embedding-3-small",
         Input: []string{
             "The quick brown fox jumps over the lazy dog",
@@ -240,14 +240,14 @@ func embeddingsExample() {
 
 ```go
 func imageGenerationExample() {
-    client, _ := llmclient.NewOpenAIModel(llmclient.OpenAIModelConfig{
+    client, _ := easyllm.NewOpenAIModel(easyllm.OpenAIModelConfig{
         APIKey: "your-api-key",
     })
 
-    req := &llmclient.ImageRequest{
+    req := &easyllm.ImageRequest{
         Model:  "dall-e-3",
         Prompt: "A futuristic city with flying cars and neon lights",
-        Config: &llmclient.ImageModelConfig{
+        Config: &easyllm.ImageModelConfig{
             Size:    "1024x1024",
             Quality: "hd",
             N:       1,
@@ -302,20 +302,20 @@ export DEEPSEEK_API_KEY="your-deepseek-key"
 
 ```go
 // OpenAI with custom base URL
-openai, _ := llmclient.NewOpenAIModel(llmclient.OpenAIModelConfig{
+openai, _ := easyllm.NewOpenAIModel(easyllm.OpenAIModelConfig{
     APIKey:  "key",
     BaseURL: "https://api.openai.com/v1", // Optional
 })
 
 // Azure OpenAI
-azure, _ := llmclient.NewAzureOpenAIModel(llmclient.AzureOpenAIModelConfig{
+azure, _ := easyllm.NewAzureOpenAIModel(easyllm.AzureOpenAIModelConfig{
     APIKey:     "key",
     BaseURL:    "https://your-resource.openai.azure.com",
     APIVersion: "2024-02-15-preview",
 })
 
 // Claude with custom settings
-claude, _ := llmclient.NewClaudeModel(llmclient.ClaudeModelConfig{
+claude, _ := easyllm.NewClaudeModel(easyllm.ClaudeModelConfig{
     APIKey:  "key",
     BaseURL: "https://api.anthropic.com", // Optional
 })
@@ -360,7 +360,7 @@ fmt.Printf("Total tokens: %d\n", usage.TotalTokens)
 
 // Calculate cost manually
 modelInfo := client.SupportedModels()[0] // Get model info
-cost := llmclient.CalculateCost(modelInfo, usage)
+cost := easyllm.CalculateCost(modelInfo, usage)
 ```
 
 ## JSON Schema Generation
@@ -373,18 +373,18 @@ type Person struct {
 }
 
 // Generate schema for structured output
-schema := llmclient.GenerateSchema[Person]()
+schema := easyllm.GenerateSchema[Person]()
 
-req := &llmclient.ModelRequest{
+req := &easyllm.ModelRequest{
     Model: "gpt-4",
-    Messages: []*llmclient.Message{
+    Messages: []*easyllm.Message{
         {
-            Role:    llmclient.MessageRoleUser,
+            Role:    easyllm.MessageRoleUser,
             Content: "Extract person information from: John Doe, 30 years old, john@example.com",
         },
     },
-    Config: &llmclient.ModelConfig{
-        ResponseFormat: llmclient.ResponseFormatJSON,
+    Config: &easyllm.ModelConfig{
+        ResponseFormat: easyllm.ResponseFormatJSON,
         JSONSchema:     schema,
     },
 }
@@ -418,8 +418,8 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/easymvp/llmclient.git
-cd llmclient
+git clone https://github.com/easymvp/easyllm.git
+cd easyllm
 ```
 
 2. Install dependencies:
@@ -455,9 +455,9 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 ## Support
 
-- 📖 [Documentation](https://github.com/easymvp/llmclient/wiki)
-- 🐛 [Issue Tracker](https://github.com/easymvp/llmclient/issues)
-- 💬 [Discussions](https://github.com/easymvp/llmclient/discussions)
+- 📖 [Documentation](https://github.com/easymvp/easyllm/wiki)
+- 🐛 [Issue Tracker](https://github.com/easymvp/easyllm/issues)
+- 💬 [Discussions](https://github.com/easymvp/easyllm/discussions)
 
 ## Roadmap
 

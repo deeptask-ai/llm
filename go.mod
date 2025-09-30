@@ -1,4 +1,4 @@
-module github.com/easymvp/llmclient
+module github.com/easymvp/easyllm
 
 go 1.24.4
 

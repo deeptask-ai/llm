@@ -11,7 +11,7 @@ import (
 type MessageArtifact struct {
 	ID          string            `json:"id"`
 	Name        string            `json:"name" binding:"required"`
-	ContentType string            `json:"contenttype" binding:"required"`
+	ContentType string            `json:"contentType" binding:"required"`
 	Description string            `json:"description"`
 	Slug        string            `json:"slug" binding:"required"`
 	Content     []byte            `json:"content"`

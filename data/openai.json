@@ -1,0 +1,184 @@
+[
+  {
+    "id": "gpt-5",
+    "name": "GPT-5",
+    "pricing": {
+      "prompt": 0.00000125,
+      "completion": 0.00001,
+      "request": 0,
+      "image": 0,
+      "webSearch": 0.01,
+      "internalReasoning": 0,
+      "inputCacheRead": 0.000000125,
+      "inputCacheWrite": 0
+    }
+  },
+  {
+    "id": "gpt-5-mini",
+    "name": "GPT-5 Mini",
+    "pricing": {
+      "prompt": 0.00000025,
+      "completion": 0.000002,
+      "request": 0,
+      "image": 0,
+      "webSearch": 0.01,
+      "internalReasoning": 0,
+      "inputCacheRead": 0.000000025,
+      "inputCacheWrite": 0
+    }
+  },
+  {
+    "id": "gpt-5-nano",
+    "name": "GPT-5 Nano",
+    "pricing": {
+      "prompt": 0.00000005,
+      "completion": 0.0000004,
+      "request": 0,
+      "image": 0,
+      "webSearch": 0.01,
+      "internalReasoning": 0,
+      "inputCacheRead": 0.000000005,
+      "inputCacheWrite": 0
+    }
+  },
+  {
+    "id": "gpt-4.1",
+    "name": "GPT-4.1 (fine-tuning)",
+    "pricing": {
+      "prompt": 0.000003,
+      "completion": 0.000012,
+      "request": 0,
+      "image": 0,
+      "webSearch": 0.025,
+      "internalReasoning": 0,
+      "inputCacheRead": 0.00000075,
+      "inputCacheWrite": 0
+    }
+  },
+  {
+    "id": "gpt-4.1-mini",
+    "name": "GPT-4.1 Mini (fine-tuning)",
+    "pricing": {
+      "prompt": 0.0000008,
+      "completion": 0.0000032,
+      "request": 0,
+      "image": 0,
+      "webSearch": 0.025,
+      "internalReasoning": 0,
+      "inputCacheRead": 0.0000002,
+      "inputCacheWrite": 0
+    }
+  },
+  {
+    "id": "gpt-4.1-nano",
+    "name": "GPT-4.1 Nano (fine-tuning)",
+    "pricing": {
+      "prompt": 0.0000002,
+      "completion": 0.0000008,
+      "request": 0,
+      "image": 0,
+      "webSearch": 0.025,
+      "internalReasoning": 0,
+      "inputCacheRead": 0.00000005,
+      "inputCacheWrite": 0
+    }
+  },
+  {
+    "id": "o4-mini",
+    "name": "o4-mini (reinforcement fine-tuning)",
+    "pricing": {
+      "prompt": 0.000004,
+      "completion": 0.000016,
+      "request": 0,
+      "image": 0,
+      "webSearch": 0.01,
+      "internalReasoning": 0,
+      "inputCacheRead": 0.000001,
+      "inputCacheWrite": 0
+    }
+  },
+  {
+    "id": "gpt-realtime-text",
+    "name": "gpt-realtime (text)",
+    "pricing": {
+      "prompt": 0.000004,
+      "completion": 0.000016,
+      "request": 0,
+      "image": 0,
+      "webSearch": 0.01,
+      "internalReasoning": 0,
+      "inputCacheRead": 0.0000004,
+      "inputCacheWrite": 0
+    }
+  },
+  {
+    "id": "gpt-realtime-audio",
+    "name": "gpt-realtime (audio)",
+    "pricing": {
+      "prompt": 0.000032,
+      "completion": 0.000064,
+      "request": 0,
+      "image": 0,
+      "webSearch": 0.01,
+      "internalReasoning": 0,
+      "inputCacheRead": 0.0000004,
+      "inputCacheWrite": 0
+    }
+  },
+  {
+    "id": "gpt-realtime-image",
+    "name": "gpt-realtime (image)",
+    "pricing": {
+      "prompt": 0.000005,
+      "completion": 0,
+      "request": 0,
+      "image": 0,
+      "webSearch": 0.01,
+      "internalReasoning": 0,
+      "inputCacheRead": 0.0000005,
+      "inputCacheWrite": 0
+    }
+  },
+  {
+    "id": "gpt-4o-mini-text",
+    "name": "gpt-4o-mini (text)",
+    "pricing": {
+      "prompt": 0.0000006,
+      "completion": 0.0000024,
+      "request": 0,
+      "image": 0,
+      "webSearch": 0.025,
+      "internalReasoning": 0,
+      "inputCacheRead": 0.0000003,
+      "inputCacheWrite": 0
+    }
+  },
+  {
+    "id": "gpt-4o-mini-audio",
+    "name": "gpt-4o-mini (audio)",
+    "pricing": {
+      "prompt": 0.00001,
+      "completion": 0.00002,
+      "request": 0,
+      "image": 0,
+      "webSearch": 0.025,
+      "internalReasoning": 0,
+      "inputCacheRead": 0.0000003,
+      "inputCacheWrite": 0
+    }
+  },
+  {
+    "id": "gpt-image-1",
+    "name": "GPT-image-1",
+    "pricing": {
+      "prompt": 0.000005,
+      "completion": 0.00004,
+      "request": 0,
+      "image": 0.17,
+      "webSearch": 0,
+      "internalReasoning": 0,
+      "inputCacheRead": 0.00001,
+      "inputCacheWrite": 0
+    }
+  }
+]

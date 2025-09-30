@@ -1,0 +1,44 @@
+[
+  {
+    "id": "opus-4.1",
+    "name": "Opus 4.1",
+    "pricing": {
+      "prompt": 0.000015,
+      "completion": 0.000075,
+      "request": 0,
+      "image": 0,
+      "webSearch": 0,
+      "internalReasoning": 0,
+      "inputCacheRead": 0.0000015,
+      "inputCacheWrite": 0.00001875
+    }
+  },
+  {
+    "id": "sonnet-4.5",
+    "name": "Sonnet 4.5",
+    "pricing": {
+      "prompt": 0.000003,
+      "completion": 0.000015,
+      "request": 0,
+      "image": 0,
+      "webSearch": 0,
+      "internalReasoning": 0,
+      "inputCacheRead": 0.0000003,
+      "inputCacheWrite": 0.00000375
+    }
+  },
+  {
+    "id": "haiku-3.5",
+    "name": "Haiku 3.5",
+    "pricing": {
+      "prompt": 0.0000008,
+      "completion": 0.000004,
+      "request": 0,
+      "image": 0,
+      "webSearch": 0,
+      "internalReasoning": 0,
+      "inputCacheRead": 0.00000008,
+      "inputCacheWrite": 0.000001
+    }
+  }
+]

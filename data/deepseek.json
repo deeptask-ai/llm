@@ -1,0 +1,30 @@
+[
+  {
+    "id": "deepseek-chat",
+    "name": "DeepSeek Chat",
+    "pricing": {
+      "prompt": 0.00000028,
+      "completion": 0.00000042,
+      "request": 0,
+      "image": 0,
+      "webSearch": 0,
+      "internalReasoning": 0,
+      "inputCacheRead": 0.000000028,
+      "inputCacheWrite": 0
+    }
+  },
+  {
+    "id": "deepseek-reasoner",
+    "name": "DeepSeek Reasoner",
+    "pricing": {
+      "prompt": 0.00000028,
+      "completion": 0.00000042,
+      "request": 0,
+      "image": 0,
+      "webSearch": 0,
+      "internalReasoning": 0,
+      "inputCacheRead": 0.000000028,
+      "inputCacheWrite": 0
+    }
+  }
+]

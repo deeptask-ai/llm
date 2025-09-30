@@ -3,13 +3,13 @@
     "id": "gpt-5",
     "name": "GPT-5",
     "pricing": {
-      "prompt": 0.00000125,
-      "completion": 0.00001,
+      "prompt": 1.25,
+      "completion": 10,
       "request": 0,
       "image": 0,
       "webSearch": 0.01,
       "internalReasoning": 0,
-      "inputCacheRead": 0.000000125,
+      "inputCacheRead": 0.125,
       "inputCacheWrite": 0
     }
   },
@@ -17,13 +17,13 @@
     "id": "gpt-5-mini",
     "name": "GPT-5 Mini",
     "pricing": {
-      "prompt": 0.00000025,
-      "completion": 0.000002,
+      "prompt": 0.25,
+      "completion": 2,
       "request": 0,
       "image": 0,
       "webSearch": 0.01,
       "internalReasoning": 0,
-      "inputCacheRead": 0.000000025,
+      "inputCacheRead": 0.025,
       "inputCacheWrite": 0
     }
   },
@@ -31,13 +31,13 @@
     "id": "gpt-5-nano",
     "name": "GPT-5 Nano",
     "pricing": {
-      "prompt": 0.00000005,
-      "completion": 0.0000004,
+      "prompt": 0.05,
+      "completion": 0.4,
       "request": 0,
       "image": 0,
       "webSearch": 0.01,
       "internalReasoning": 0,
-      "inputCacheRead": 0.000000005,
+      "inputCacheRead": 0.005,
       "inputCacheWrite": 0
     }
   },
@@ -45,13 +45,13 @@
     "id": "gpt-4.1",
     "name": "GPT-4.1 (fine-tuning)",
     "pricing": {
-      "prompt": 0.000003,
-      "completion": 0.000012,
+      "prompt": 3,
+      "completion": 12,
       "request": 0,
       "image": 0,
       "webSearch": 0.025,
       "internalReasoning": 0,
-      "inputCacheRead": 0.00000075,
+      "inputCacheRead": 0.75,
       "inputCacheWrite": 0
     }
   },
@@ -59,13 +59,13 @@
     "id": "gpt-4.1-mini",
     "name": "GPT-4.1 Mini (fine-tuning)",
     "pricing": {
-      "prompt": 0.0000008,
-      "completion": 0.0000032,
+      "prompt": 0.8,
+      "completion": 3.2,
       "request": 0,
       "image": 0,
       "webSearch": 0.025,
       "internalReasoning": 0,
-      "inputCacheRead": 0.0000002,
+      "inputCacheRead": 0.2,
       "inputCacheWrite": 0
     }
   },
@@ -73,13 +73,13 @@
     "id": "gpt-4.1-nano",
     "name": "GPT-4.1 Nano (fine-tuning)",
     "pricing": {
-      "prompt": 0.0000002,
-      "completion": 0.0000008,
+      "prompt": 0.2,
+      "completion": 0.8,
       "request": 0,
       "image": 0,
       "webSearch": 0.025,
       "internalReasoning": 0,
-      "inputCacheRead": 0.00000005,
+      "inputCacheRead": 0.05,
       "inputCacheWrite": 0
     }
   },
@@ -87,13 +87,13 @@
     "id": "o4-mini",
     "name": "o4-mini (reinforcement fine-tuning)",
     "pricing": {
-      "prompt": 0.000004,
-      "completion": 0.000016,
+      "prompt": 4,
+      "completion": 16,
       "request": 0,
       "image": 0,
       "webSearch": 0.01,
       "internalReasoning": 0,
-      "inputCacheRead": 0.000001,
+      "inputCacheRead": 1,
       "inputCacheWrite": 0
     }
   },
@@ -101,13 +101,13 @@
     "id": "gpt-realtime-text",
     "name": "gpt-realtime (text)",
     "pricing": {
-      "prompt": 0.000004,
-      "completion": 0.000016,
+      "prompt": 4,
+      "completion": 16,
       "request": 0,
       "image": 0,
       "webSearch": 0.01,
       "internalReasoning": 0,
-      "inputCacheRead": 0.0000004,
+      "inputCacheRead": 0.4,
       "inputCacheWrite": 0
     }
   },
@@ -115,13 +115,13 @@
     "id": "gpt-realtime-audio",
     "name": "gpt-realtime (audio)",
     "pricing": {
-      "prompt": 0.000032,
-      "completion": 0.000064,
+      "prompt": 32,
+      "completion": 64,
       "request": 0,
       "image": 0,
       "webSearch": 0.01,
       "internalReasoning": 0,
-      "inputCacheRead": 0.0000004,
+      "inputCacheRead": 0.4,
       "inputCacheWrite": 0
     }
   },
@@ -129,13 +129,13 @@
     "id": "gpt-realtime-image",
     "name": "gpt-realtime (image)",
     "pricing": {
-      "prompt": 0.000005,
+      "prompt": 5,
       "completion": 0,
       "request": 0,
       "image": 0,
       "webSearch": 0.01,
       "internalReasoning": 0,
-      "inputCacheRead": 0.0000005,
+      "inputCacheRead": 0.5,
       "inputCacheWrite": 0
     }
   },
@@ -143,13 +143,13 @@
     "id": "gpt-4o-mini-text",
     "name": "gpt-4o-mini (text)",
     "pricing": {
-      "prompt": 0.0000006,
-      "completion": 0.0000024,
+      "prompt": 0.6,
+      "completion": 2.4,
       "request": 0,
       "image": 0,
       "webSearch": 0.025,
       "internalReasoning": 0,
-      "inputCacheRead": 0.0000003,
+      "inputCacheRead": 0.3,
       "inputCacheWrite": 0
     }
   },
@@ -157,13 +157,13 @@
     "id": "gpt-4o-mini-audio",
     "name": "gpt-4o-mini (audio)",
     "pricing": {
-      "prompt": 0.00001,
-      "completion": 0.00002,
+      "prompt": 10,
+      "completion": 20,
       "request": 0,
       "image": 0,
       "webSearch": 0.025,
       "internalReasoning": 0,
-      "inputCacheRead": 0.0000003,
+      "inputCacheRead": 0.3,
       "inputCacheWrite": 0
     }
   },
@@ -171,13 +171,13 @@
     "id": "gpt-image-1",
     "name": "GPT-image-1",
     "pricing": {
-      "prompt": 0.000005,
-      "completion": 0.00004,
+      "prompt": 5,
+      "completion": 40,
       "request": 0,
       "image": 0.17,
       "webSearch": 0,
       "internalReasoning": 0,
-      "inputCacheRead": 0.00001,
+      "inputCacheRead": 10,
       "inputCacheWrite": 0
     }
   }

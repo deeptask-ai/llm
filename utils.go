@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"sync"
 	"text/template"
 )
 
@@ -17,6 +18,15 @@ var (
 	ErrNoCompletionChoices = errors.New("no completion choices returned")
 	ErrNoImageData         = errors.New("no image data returned")
 	ErrModelNotFound       = errors.New("model not found")
+	ErrInvalidRequest      = errors.New("invalid request")
+	ErrEmptyContent        = errors.New("content cannot be empty")
+	ErrInvalidModel        = errors.New("invalid model specified")
+)
+
+// Template cache for better performance
+var (
+	templateCache = make(map[string]*template.Template)
+	templateMutex sync.RWMutex
 )
 
 // Capability errors for unsupported features
@@ -138,17 +148,80 @@ func ValidateImageRequest(req *ImageRequest) error {
 	return nil
 }
 
+// GetPrompts executes a template with caching for better performance
 func GetPrompts(prompt string, params map[string]interface{}) (string, error) {
-	tmpl, err := template.New("prompt").Parse(prompt)
-	if err != nil {
-		return "", fmt.Errorf("failed to parse template: %w", err)
+	// Try to get cached template first (read lock)
+	templateMutex.RLock()
+	tmpl, exists := templateCache[prompt]
+	templateMutex.RUnlock()
+
+	if !exists {
+		// Parse and cache the template (write lock)
+		templateMutex.Lock()
+		// Double-check in case another goroutine added it
+		if tmpl, exists = templateCache[prompt]; !exists {
+			var err error
+			tmpl, err = template.New("prompt").Parse(prompt)
+			if err != nil {
+				templateMutex.Unlock()
+				return "", fmt.Errorf("failed to parse template: %w", err)
+			}
+			templateCache[prompt] = tmpl
+		}
+		templateMutex.Unlock()
 	}
 
 	var buf bytes.Buffer
-	err = tmpl.Execute(&buf, params)
-	if err != nil {
+	if err := tmpl.Execute(&buf, params); err != nil {
 		return "", fmt.Errorf("failed to execute template: %w", err)
 	}
 
 	return buf.String(), nil
+}
+
+// ClearTemplateCache clears the template cache to free memory
+func ClearTemplateCache() {
+	templateMutex.Lock()
+	templateCache = make(map[string]*template.Template)
+	templateMutex.Unlock()
+}
+
+// OptimizedCalculateCost is a more efficient version of cost calculation
+func OptimizedCalculateCost(modelInfo *ModelInfo, usage *TokenUsage) *float64 {
+	if modelInfo == nil || usage == nil {
+		return nil
+	}
+
+	const tokensPerMillion = 1000000.0
+	totalCost := 0.0
+
+	// Parse prices once and cache them
+	promptPrice, err := strconv.ParseFloat(modelInfo.Pricing.Prompt, 64)
+	if err != nil {
+		return nil
+	}
+
+	completionPrice, err := strconv.ParseFloat(modelInfo.Pricing.Completion, 64)
+	if err != nil {
+		return nil
+	}
+
+	// Calculate input token costs
+	if cacheReadPrice, err := strconv.ParseFloat(modelInfo.Pricing.InputCacheRead, 64); err == nil && cacheReadPrice > 0.0 {
+		totalInputTokens := usage.TotalInputTokens - usage.TotalCacheReadTokens
+		totalCost += (float64(totalInputTokens) / tokensPerMillion) * promptPrice
+		totalCost += (float64(usage.TotalCacheReadTokens) / tokensPerMillion) * cacheReadPrice
+	} else {
+		totalCost += (float64(usage.TotalInputTokens) / tokensPerMillion) * promptPrice
+	}
+
+	// Calculate reasoning token costs
+	if internalReasoningPrice, err := strconv.ParseFloat(modelInfo.Pricing.InternalReasoning, 64); err == nil && internalReasoningPrice > 0.0 {
+		totalCost += (float64(usage.TotalReasoningTokens) / tokensPerMillion) * internalReasoningPrice
+	}
+
+	// Calculate completion token costs
+	totalCost += (float64(usage.TotalOutputTokens) / tokensPerMillion) * completionPrice
+
+	return &totalCost
 }

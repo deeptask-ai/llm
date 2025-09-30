@@ -6,14 +6,18 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"sync"
+
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
-	"strconv"
 )
 
 type OpenAIModel struct {
-	client openai.Client
-	apiKey string
+	client     openai.Client
+	apiKey     string
+	modelCache map[string]*ModelInfo
+	cacheMutex sync.RWMutex
 }
 
 type OpenAIModelConfig struct {
@@ -31,8 +35,10 @@ func NewOpenAIModel(config OpenAIModelConfig) (*OpenAIModel, error) {
 	)
 
 	provider := &OpenAIModel{
-		client: client,
-		apiKey: config.APIKey,
+		client:     client,
+		apiKey:     config.APIKey,
+		modelCache: make(map[string]*ModelInfo),
+		cacheMutex: sync.RWMutex{},
 	}
 
 	return provider, nil
@@ -53,7 +59,7 @@ func (p *OpenAIModel) SupportedModels() []*ModelInfo {
 	return models
 }
 
-func (p *OpenAIModel) GenerateStream(ctx context.Context, req *ModelRequest) (StreamModelResponse, error) {
+func (p *OpenAIModel) GenerateContentStream(ctx context.Context, req *ModelRequest) (StreamModelResponse, error) {
 	params := ToChatCompletionParams(req.Model, req.Instructions, req.Messages, req.Config, req.Tools)
 	stream := p.client.Chat.Completions.NewStreaming(ctx, params)
 	chunkChan := make(chan StreamChunk, 1)
@@ -430,13 +436,33 @@ func ToChatCompletionMessage(msg *Message) openai.ChatCompletionMessageParamUnio
 	}
 }
 
-// getModelInfo returns the ModelInfo for a given model from the supported models
+// getModelInfo returns the ModelInfo for a given model with caching for better performance
 func (p *OpenAIModel) getModelInfo(modelID string) *ModelInfo {
+	// Try to get from cache first (read lock)
+	p.cacheMutex.RLock()
+	if modelInfo, exists := p.modelCache[modelID]; exists {
+		p.cacheMutex.RUnlock()
+		return modelInfo
+	}
+	p.cacheMutex.RUnlock()
+
+	// Not in cache, search through supported models
 	models := p.SupportedModels()
 	for _, model := range models {
 		if model.ID == modelID {
+			// Cache the result (write lock)
+			p.cacheMutex.Lock()
+			p.modelCache[modelID] = model
+			p.cacheMutex.Unlock()
 			return model
 		}
 	}
 	return nil
+}
+
+// ClearModelCache clears the model info cache
+func (p *OpenAIModel) ClearModelCache() {
+	p.cacheMutex.Lock()
+	p.modelCache = make(map[string]*ModelInfo)
+	p.cacheMutex.Unlock()
 }

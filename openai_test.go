@@ -155,7 +155,7 @@ func TestToChatCompletionParams(t *testing.T) {
 		ResponseFormat:   ResponseFormatJson,
 	}
 
-	params := ToChatCompletionParams("gpt-4", "You are a helpful assistant", messages, config)
+	params := ToChatCompletionParams("gpt-4", "You are a helpful assistant", messages, config, nil)
 
 	if params.Model != "gpt-4" {
 		t.Errorf("Expected model 'gpt-4', got '%s'", params.Model)
@@ -176,7 +176,7 @@ func TestToChatCompletionParams_WithoutConfig(t *testing.T) {
 		{Role: MessageRoleUser, Content: "Hello"},
 	}
 
-	params := ToChatCompletionParams("gpt-3.5-turbo", "", messages, nil)
+	params := ToChatCompletionParams("gpt-3.5-turbo", "", messages, nil, nil)
 
 	if params.Model != "gpt-3.5-turbo" {
 		t.Errorf("Expected model 'gpt-3.5-turbo', got '%s'", params.Model)

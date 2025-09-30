@@ -1,9 +1,11 @@
 package llmclient
 
 import (
+	"context"
 	_ "embed"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 )
@@ -49,4 +51,12 @@ func (p *ClaudeModel) SupportedModels() []*ModelInfo {
 		return nil
 	}
 	return models
+}
+
+func (p *ClaudeModel) Name() string {
+	return "claude"
+}
+
+func (p *ClaudeModel) GenerateEmbeddings(ctx context.Context, req *EmbeddingRequest) (*EmbeddingResponse, error) {
+	return nil, fmt.Errorf("embeddings are not supported by Claude models")
 }

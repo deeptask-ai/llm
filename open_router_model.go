@@ -1,6 +1,7 @@
 package llmclient
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -143,4 +144,12 @@ func (p *OpenRouterModel) getModelInfo(modelID string) *ModelInfo {
 			InputCacheWrite:   openRouterModel.Pricing.InputCacheWrite,
 		},
 	}
+}
+
+func (p *OpenRouterModel) Name() string {
+	return "openrouter"
+}
+
+func (p *OpenRouterModel) GenerateEmbeddings(ctx context.Context, req *EmbeddingRequest) (*EmbeddingResponse, error) {
+	return nil, fmt.Errorf("embeddings are not supported by OpenRouter models")
 }

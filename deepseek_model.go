@@ -1,9 +1,11 @@
 package llmclient
 
 import (
+	"context"
 	_ "embed"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 )
@@ -48,4 +50,12 @@ func (p *DeepSeekModel) SupportedModels() []*ModelInfo {
 		return nil
 	}
 	return models
+}
+
+func (p *DeepSeekModel) Name() string {
+	return "deepseek"
+}
+
+func (p *DeepSeekModel) GenerateEmbeddings(ctx context.Context, req *EmbeddingRequest) (*EmbeddingResponse, error) {
+	return nil, fmt.Errorf("embeddings are not supported by DeepSeek models")
 }

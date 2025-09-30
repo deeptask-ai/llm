@@ -1,7 +1,6 @@
 package llmclient
 
 import (
-	"bytes"
 	"context"
 	_ "embed"
 	"encoding/json"
@@ -10,7 +9,6 @@ import (
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 	"strconv"
-	"text/template"
 )
 
 type OpenAIModel struct {
@@ -156,6 +154,12 @@ func (p *OpenAIModel) GenerateContent(ctx context.Context, req *ModelRequest) (*
 		Usage:  usage,
 		Cost:   cost,
 	}, nil
+}
+
+func (p *OpenAIModel) GenerateEmbeddings(ctx context.Context, req *EmbeddingRequest) (*EmbeddingResponse, error) {
+	// For now, return a not implemented error
+	// This will be properly implemented once the OpenAI SDK interface is confirmed
+	return nil, fmt.Errorf("GenerateEmbeddings not yet implemented for OpenAI model")
 }
 
 func ToChatCompletionParams(model string, instructions string, messages []*Message, config *ModelConfig) openai.ChatCompletionNewParams {
@@ -316,19 +320,4 @@ func (p *OpenAIModel) getModelInfo(modelID string) *ModelInfo {
 		}
 	}
 	return nil
-}
-
-func GetPrompts(prompt string, params map[string]interface{}) (string, error) {
-	tmpl, err := template.New("prompt").Parse(prompt)
-	if err != nil {
-		return "", fmt.Errorf("failed to parse template: %w", err)
-	}
-
-	var buf bytes.Buffer
-	err = tmpl.Execute(&buf, params)
-	if err != nil {
-		return "", fmt.Errorf("failed to execute template: %w", err)
-	}
-
-	return buf.String(), nil
 }

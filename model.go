@@ -26,4 +26,5 @@ type Model interface {
 	SupportedModels() []*ModelInfo
 	StreamGenerateContent(ctx context.Context, req *ModelRequest) (StreamModelResponse, error)
 	GenerateContent(ctx context.Context, req *ModelRequest) (*ModelResponse, error)
+	GenerateEmbeddings(ctx context.Context, req *EmbeddingRequest) (*EmbeddingResponse, error)
 }

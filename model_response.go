@@ -120,3 +120,15 @@ func (s *TokenUsage) Append(usage *TokenUsage) {
 	s.TotalCacheReadTokens += usage.TotalCacheReadTokens
 	s.TotalCacheWriteTokens += usage.TotalCacheWriteTokens
 }
+
+type Embedding struct {
+	Index     int       `json:"index"`
+	Embedding []float64 `json:"embedding"`
+	Object    string    `json:"object"`
+}
+
+type EmbeddingResponse struct {
+	Embeddings []Embedding `json:"embeddings"`
+	Usage      *TokenUsage `json:"usage,omitempty"`
+	Cost       *float64    `json:"cost,omitempty"`
+}

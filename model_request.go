@@ -49,3 +49,22 @@ type ModelConfig struct {
 	ResponseFormat   ResponseFormat  `json:"responseFormat,omitempty"`
 	JSONSchema       any             `json:"jsonSchema,omitempty"`
 }
+
+type EmbeddingEncodingFormat string
+
+const (
+	EmbeddingEncodingFormatFloat  EmbeddingEncodingFormat = "float"
+	EmbeddingEncodingFormatBase64 EmbeddingEncodingFormat = "base64"
+)
+
+type EmbeddingRequest struct {
+	Model    string                `json:"model"`
+	Contents []string              `json:"contents"`
+	Config   *EmbeddingModelConfig `json:"config,omitempty"`
+	Metadata map[string]string     `json:"metadata,omitempty"`
+}
+
+type EmbeddingModelConfig struct {
+	Dimensions     int64                   `json:"dimensions,omitempty"`
+	EncodingFormat EmbeddingEncodingFormat `json:"encoding_format,omitempty"`
+}

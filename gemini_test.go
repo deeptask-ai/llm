@@ -76,4 +76,22 @@ func TestGeminiModel_EmptyAPIKey(t *testing.T) {
 	if err == nil {
 		t.Error("Expected error for empty API key")
 	}
+	if err.Error() != "API key cannot be empty" {
+		t.Errorf("Expected 'API key cannot be empty', got '%s'", err.Error())
+	}
+}
+
+func TestGeminiModel_ValidConfig(t *testing.T) {
+	config := GeminiModelConfig{
+		APIKey: "test-key",
+	}
+
+	model, err := NewGeminiModel(config)
+	if err != nil {
+		t.Fatalf("Failed to create Gemini model with valid config: %v", err)
+	}
+
+	if model == nil {
+		t.Fatal("Model should not be nil with valid config")
+	}
 }

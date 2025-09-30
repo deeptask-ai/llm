@@ -4,8 +4,6 @@ import (
 	"context"
 	_ "embed"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 )
@@ -20,7 +18,7 @@ type DeepSeekModelConfig struct {
 
 func NewDeepSeekModel(config DeepSeekModelConfig) (*DeepSeekModel, error) {
 	if config.APIKey == "" {
-		return nil, errors.New("API key cannot be empty")
+		return nil, ErrAPIKeyEmpty
 	}
 
 	// Create the client with DeepSeek's API endpoint
@@ -57,9 +55,9 @@ func (p *DeepSeekModel) Name() string {
 }
 
 func (p *DeepSeekModel) GenerateEmbeddings(ctx context.Context, req *EmbeddingRequest) (*EmbeddingResponse, error) {
-	return nil, fmt.Errorf("embeddings are not supported by DeepSeek models")
+	return nil, NewUnsupportedCapabilityError("DeepSeek", "embeddings")
 }
 
 func (p *DeepSeekModel) GenerateImage(ctx context.Context, req *ImageRequest) (*ImageResponse, error) {
-	return nil, fmt.Errorf("image generation is not supported by DeepSeek models")
+	return nil, NewUnsupportedCapabilityError("DeepSeek", "image generation")
 }

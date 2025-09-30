@@ -3,7 +3,6 @@ package llmclient
 import (
 	_ "embed"
 	"encoding/json"
-	"errors"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 )
@@ -20,13 +19,13 @@ type AzureOpenAIModelConfig struct {
 
 func NewAzureOpenAIModel(config AzureOpenAIModelConfig) (*AzureOpenAIModel, error) {
 	if config.APIKey == "" {
-		return nil, errors.New("API key cannot be empty")
+		return nil, ErrAPIKeyEmpty
 	}
 	if config.BaseURL == "" {
-		return nil, errors.New("base URL cannot be empty")
+		return nil, ErrBaseURLEmpty
 	}
 	if config.APIVersion == "" {
-		return nil, errors.New("API version cannot be empty")
+		return nil, ErrAPIVersionEmpty
 	}
 
 	// Create the client with Azure OpenAI's API endpoint and required headers

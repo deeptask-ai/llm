@@ -5,7 +5,6 @@ import (
 	_ "embed"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
@@ -23,7 +22,7 @@ type OpenAIModelConfig struct {
 
 func NewOpenAIModel(config OpenAIModelConfig) (*OpenAIModel, error) {
 	if config.APIKey == "" {
-		return nil, errors.New("API key cannot be empty")
+		return nil, ErrAPIKeyEmpty
 	}
 
 	// Create the client with API key
@@ -55,7 +54,7 @@ func (p *OpenAIModel) SupportedModels() []*ModelInfo {
 }
 
 func (p *OpenAIModel) GenerateStream(ctx context.Context, req *ModelRequest) (StreamModelResponse, error) {
-	params := ToChatCompletionParams(req.Model, req.Instructions, req.Messages, req.Config)
+	params := ToChatCompletionParams(req.Model, req.Instructions, req.Messages, req.Config, req.Tools)
 	stream := p.client.Chat.Completions.NewStreaming(ctx, params)
 	chunkChan := make(chan StreamChunk, 1)
 	go func() {
@@ -119,7 +118,7 @@ func (p *OpenAIModel) GenerateStream(ctx context.Context, req *ModelRequest) (St
 }
 
 func (p *OpenAIModel) GenerateContent(ctx context.Context, req *ModelRequest) (*ModelResponse, error) {
-	params := ToChatCompletionParams(req.Model, req.Instructions, req.Messages, req.Config)
+	params := ToChatCompletionParams(req.Model, req.Instructions, req.Messages, req.Config, req.Tools)
 	resp, err := p.client.Chat.Completions.New(ctx, params)
 	if err != nil {
 		return nil, fmt.Errorf("failed to complete chat: %w", err)
@@ -127,7 +126,7 @@ func (p *OpenAIModel) GenerateContent(ctx context.Context, req *ModelRequest) (*
 
 	// Check if we have any choices in the response
 	if len(resp.Choices) == 0 {
-		return nil, fmt.Errorf("no completion choices returned")
+		return nil, ErrNoCompletionChoices
 	}
 	usage := &TokenUsage{
 		TotalInputTokens:      resp.Usage.PromptTokens,
@@ -156,14 +155,80 @@ func (p *OpenAIModel) GenerateContent(ctx context.Context, req *ModelRequest) (*
 }
 
 func (p *OpenAIModel) GenerateEmbeddings(ctx context.Context, req *EmbeddingRequest) (*EmbeddingResponse, error) {
-	// For now, return a not implemented error
-	// This will be properly implemented once the OpenAI SDK interface is confirmed
-	return nil, fmt.Errorf("GenerateEmbeddings not yet implemented for OpenAI model")
+	// Validate the request
+	if err := ValidateEmbeddingRequest(req); err != nil {
+		return nil, err
+	}
+
+	// Set up parameters for embedding generation
+	params := openai.EmbeddingNewParams{
+		Model: req.Model,
+	}
+
+	// Handle input - use any interface{} for the union type
+	var input any
+	if len(req.Contents) == 1 {
+		input = req.Contents[0]
+	} else {
+		input = req.Contents
+	}
+	params.Input = input.(openai.EmbeddingNewParamsInputUnion)
+
+	// Apply config if provided
+	if req.Config != nil {
+		if req.Config.Dimensions > 0 {
+			params.Dimensions = openai.Int(req.Config.Dimensions)
+		}
+		if req.Config.EncodingFormat != "" {
+			switch req.Config.EncodingFormat {
+			case EmbeddingEncodingFormatFloat:
+				params.EncodingFormat = openai.EmbeddingNewParamsEncodingFormatFloat
+			case EmbeddingEncodingFormatBase64:
+				params.EncodingFormat = openai.EmbeddingNewParamsEncodingFormatBase64
+			}
+		}
+	}
+
+	// Generate embeddings
+	resp, err := p.client.Embeddings.New(ctx, params)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate embeddings: %w", err)
+	}
+
+	// Convert OpenAI embeddings to our format
+	embeddings := make([]Embedding, len(resp.Data))
+	for i, data := range resp.Data {
+		embeddings[i] = Embedding{
+			Index:     int(data.Index),
+			Embedding: data.Embedding,
+			Object:    string(data.Object),
+		}
+	}
+
+	// Create usage information
+	usage := &TokenUsage{
+		TotalInputTokens:  resp.Usage.PromptTokens,
+		TotalOutputTokens: 0, // Embeddings don't have output tokens
+		TotalRequests:     1,
+	}
+
+	// Calculate cost if model info is available
+	var cost *float64
+	modelInfo := p.getModelInfo(req.Model)
+	if modelInfo != nil {
+		cost = CalculateCost(modelInfo, usage)
+	}
+
+	return &EmbeddingResponse{
+		Embeddings: embeddings,
+		Usage:      usage,
+		Cost:       cost,
+	}, nil
 }
 
 func (p *OpenAIModel) GenerateImage(ctx context.Context, req *ImageRequest) (*ImageResponse, error) {
 	if req.Instructions == "" {
-		return nil, fmt.Errorf("no instructions provided for image generation")
+		return nil, ErrNoInstructions
 	}
 
 	// Set up parameters for image generation using instructions as prompt
@@ -212,7 +277,7 @@ func (p *OpenAIModel) GenerateImage(ctx context.Context, req *ImageRequest) (*Im
 	}
 
 	if len(image.Data) == 0 {
-		return nil, fmt.Errorf("no image data returned")
+		return nil, ErrNoImageData
 	}
 
 	// Decode base64 image data
@@ -247,7 +312,7 @@ func (p *OpenAIModel) GenerateImage(ctx context.Context, req *ImageRequest) (*Im
 	}, nil
 }
 
-func ToChatCompletionParams(model string, instructions string, messages []*Message, config *ModelConfig) openai.ChatCompletionNewParams {
+func ToChatCompletionParams(model string, instructions string, messages []*Message, config *ModelConfig, tools []Tool) openai.ChatCompletionNewParams {
 	openaiMessages := make([]openai.ChatCompletionMessageParamUnion, 0, len(messages)+1)
 
 	// Add system content if provided
@@ -263,6 +328,21 @@ func ToChatCompletionParams(model string, instructions string, messages []*Messa
 	params := openai.ChatCompletionNewParams{
 		Messages: openaiMessages,
 		Model:    model,
+	}
+
+	// Add tools if provided
+	if len(tools) > 0 {
+		openaiTools := make([]openai.ChatCompletionToolParam, 0, len(tools))
+		for _, tool := range tools {
+			openaiTool := openai.ChatCompletionToolParam{
+				Function: openai.FunctionDefinitionParam{
+					Name:        tool.Name(),
+					Description: openai.String(tool.Description()),
+				},
+			}
+			openaiTools = append(openaiTools, openaiTool)
+		}
+		params.Tools = openaiTools
 	}
 
 	if config != nil {
@@ -348,52 +428,6 @@ func ToChatCompletionMessage(msg *Message) openai.ChatCompletionMessageParamUnio
 	} else {
 		panic("unknown role")
 	}
-}
-
-// CalculateCost calculates the cost based on token usage and model pricing information
-// This function can be shared across all model implementations
-func CalculateCost(modelInfo *ModelInfo, usage *TokenUsage) *float64 {
-	if modelInfo == nil {
-		return nil
-	}
-
-	totalCost := 0.0
-
-	// Calculate input token costs
-	cacheReadPrice, err := strconv.ParseFloat(modelInfo.Pricing.InputCacheRead, 64)
-	if err != nil {
-		cacheReadPrice = 0.0
-	}
-	promptPrice, err := strconv.ParseFloat(modelInfo.Pricing.Prompt, 64)
-	if err != nil {
-		return nil
-	}
-
-	if cacheReadPrice > 0.0 {
-		totalInputTokens := usage.TotalInputTokens - usage.TotalCacheReadTokens
-		totalCost += (float64(totalInputTokens) / 1000000.0) * promptPrice
-		totalCost += (float64(usage.TotalCacheReadTokens) / 1000000.0) * cacheReadPrice
-	} else {
-		totalCost += (float64(usage.TotalInputTokens) / 1000000.0) * promptPrice
-	}
-
-	// Calculate internal reasoning token costs
-	internalReasoningPrice, err := strconv.ParseFloat(modelInfo.Pricing.InternalReasoning, 64)
-	if err != nil {
-		internalReasoningPrice = 0.0
-	}
-	if internalReasoningPrice > 0.0 {
-		totalCost += (float64(usage.TotalReasoningTokens) / 1000000.0) * internalReasoningPrice
-	}
-
-	// Calculate completion token costs
-	completionPrice, err := strconv.ParseFloat(modelInfo.Pricing.Completion, 64)
-	if err != nil {
-		return nil
-	}
-	totalCost += (float64(usage.TotalOutputTokens) / 1000000.0) * completionPrice
-
-	return &totalCost
 }
 
 // getModelInfo returns the ModelInfo for a given model from the supported models

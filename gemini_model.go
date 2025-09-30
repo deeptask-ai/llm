@@ -4,8 +4,6 @@ import (
 	"context"
 	_ "embed"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 )
@@ -20,7 +18,7 @@ type GeminiModelConfig struct {
 
 func NewGeminiModel(config GeminiModelConfig) (*GeminiModel, error) {
 	if config.APIKey == "" {
-		return nil, errors.New("API key cannot be empty")
+		return nil, ErrAPIKeyEmpty
 	}
 
 	// Create the client with Gemini's OpenAI-compatible API endpoint
@@ -57,11 +55,11 @@ func (p *GeminiModel) Name() string {
 }
 
 func (p *GeminiModel) GenerateEmbeddings(ctx context.Context, req *EmbeddingRequest) (*EmbeddingResponse, error) {
-	return nil, fmt.Errorf("embeddings are not supported by Gemini models via OpenAI-compatible API")
+	return nil, NewUnsupportedCapabilityError("Gemini", "embeddings")
 }
 
 func (p *GeminiModel) GenerateImage(ctx context.Context, req *ImageRequest) (*ImageResponse, error) {
-	return nil, fmt.Errorf("image generation is not supported by Gemini models via OpenAI-compatible API")
+	return nil, NewUnsupportedCapabilityError("Gemini", "image generation")
 }
 
 // Override getModelInfo to use Gemini-specific models

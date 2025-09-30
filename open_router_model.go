@@ -3,7 +3,6 @@ package llmclient
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 
@@ -43,7 +42,7 @@ type OpenRouterModelConfig struct {
 
 func NewOpenRouterModel(config OpenRouterModelConfig) (*OpenRouterModel, error) {
 	if config.APIKey == "" {
-		return nil, errors.New("API key cannot be empty")
+		return nil, ErrAPIKeyEmpty
 	}
 	client := openai.NewClient(
 		option.WithBaseURL("https://openrouter.ai/api/v1/"),
@@ -151,9 +150,9 @@ func (p *OpenRouterModel) Name() string {
 }
 
 func (p *OpenRouterModel) GenerateEmbeddings(ctx context.Context, req *EmbeddingRequest) (*EmbeddingResponse, error) {
-	return nil, fmt.Errorf("embeddings are not supported by OpenRouter models")
+	return nil, NewUnsupportedCapabilityError("OpenRouter", "embeddings")
 }
 
 func (p *OpenRouterModel) GenerateImage(ctx context.Context, req *ImageRequest) (*ImageResponse, error) {
-	return nil, fmt.Errorf("image generation is not supported by OpenRouter models")
+	return nil, NewUnsupportedCapabilityError("OpenRouter", "image generation")
 }

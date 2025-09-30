@@ -4,8 +4,6 @@ import (
 	"context"
 	_ "embed"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 )
@@ -20,7 +18,7 @@ type ClaudeModelConfig struct {
 
 func NewClaudeModel(config ClaudeModelConfig) (*ClaudeModel, error) {
 	if config.APIKey == "" {
-		return nil, errors.New("API key cannot be empty")
+		return nil, ErrAPIKeyEmpty
 	}
 
 	// Create the client with Claude's API endpoint and required headers
@@ -58,9 +56,9 @@ func (p *ClaudeModel) Name() string {
 }
 
 func (p *ClaudeModel) GenerateEmbeddings(ctx context.Context, req *EmbeddingRequest) (*EmbeddingResponse, error) {
-	return nil, fmt.Errorf("embeddings are not supported by Claude models")
+	return nil, NewUnsupportedCapabilityError("Claude", "embeddings")
 }
 
 func (p *ClaudeModel) GenerateImage(ctx context.Context, req *ImageRequest) (*ImageResponse, error) {
-	return nil, fmt.Errorf("image generation is not supported by Claude models")
+	return nil, NewUnsupportedCapabilityError("Claude", "image generation")
 }

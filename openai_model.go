@@ -59,8 +59,8 @@ func (p *OpenAIModel) SupportedModels() []*ModelInfo {
 	return models
 }
 
-func (p *OpenAIModel) GenerateContentStream(ctx context.Context, req *ModelRequest) (StreamModelResponse, error) {
-	params := ToChatCompletionParams(req.Model, req.Instructions, req.Messages, req.Config, req.Tools)
+func (p *OpenAIModel) GenerateContentStream(ctx context.Context, req *ModelRequest, tools []ModelTool) (StreamModelResponse, error) {
+	params := ToChatCompletionParams(req.Model, req.Instructions, req.Messages, req.Config, tools)
 	stream := p.client.Chat.Completions.NewStreaming(ctx, params)
 	chunkChan := make(chan StreamChunk, 1)
 	go func() {
@@ -123,8 +123,8 @@ func (p *OpenAIModel) GenerateContentStream(ctx context.Context, req *ModelReque
 	return chunkChan, nil
 }
 
-func (p *OpenAIModel) GenerateContent(ctx context.Context, req *ModelRequest) (*ModelResponse, error) {
-	params := ToChatCompletionParams(req.Model, req.Instructions, req.Messages, req.Config, req.Tools)
+func (p *OpenAIModel) GenerateContent(ctx context.Context, req *ModelRequest, tools []ModelTool) (*ModelResponse, error) {
+	params := ToChatCompletionParams(req.Model, req.Instructions, req.Messages, req.Config, tools)
 	resp, err := p.client.Chat.Completions.New(ctx, params)
 	if err != nil {
 		return nil, fmt.Errorf("failed to complete chat: %w", err)

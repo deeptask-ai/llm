@@ -8,7 +8,6 @@ type ModelRequest struct {
 	Model        string
 	Messages     []*ModelMessage
 	Config       *ModelConfig
-	Tools        []ModelTool
 	Cost         bool
 }
 

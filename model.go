@@ -35,10 +35,10 @@ type Model interface {
 	SupportedModels() []*ModelInfo
 
 	// GenerateContentStream generates streaming content from the model
-	GenerateContentStream(ctx context.Context, req *ModelRequest) (StreamModelResponse, error)
+	GenerateContentStream(ctx context.Context, req *ModelRequest, tools []ModelTool) (StreamModelResponse, error)
 
 	// GenerateContent generates complete content from the model
-	GenerateContent(ctx context.Context, req *ModelRequest) (*ModelResponse, error)
+	GenerateContent(ctx context.Context, req *ModelRequest, tools []ModelTool) (*ModelResponse, error)
 
 	// GenerateEmbeddings generates text embeddings (may not be supported by all providers)
 	GenerateEmbeddings(ctx context.Context, req *EmbeddingRequest) (*EmbeddingResponse, error)

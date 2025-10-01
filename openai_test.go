@@ -138,7 +138,7 @@ func TestOpenAIModel_GetModelInfo(t *testing.T) {
 
 func TestToChatCompletionParams(t *testing.T) {
 	// Test basic parameters
-	messages := []*Message{
+	messages := []*ModelMessage{
 		{Role: MessageRoleUser, Content: "Hello"},
 		{Role: MessageRoleAssistant, Content: "Hi there!"},
 	}
@@ -172,7 +172,7 @@ func TestToChatCompletionParams(t *testing.T) {
 
 func TestToChatCompletionParams_WithoutConfig(t *testing.T) {
 	// Test with nil config
-	messages := []*Message{
+	messages := []*ModelMessage{
 		{Role: MessageRoleUser, Content: "Hello"},
 	}
 
@@ -192,17 +192,17 @@ func TestToChatCompletionParams_WithoutConfig(t *testing.T) {
 
 func TestToChatCompletionMessage(t *testing.T) {
 	// Test user message
-	userMsg := &Message{Role: MessageRoleUser, Content: "Hello"}
+	userMsg := &ModelMessage{Role: MessageRoleUser, Content: "Hello"}
 	_ = ToChatCompletionMessage(userMsg)
 	t.Logf("User message converted successfully")
 
 	// Test assistant message
-	assistantMsg := &Message{Role: MessageRoleAssistant, Content: "Hi there!"}
+	assistantMsg := &ModelMessage{Role: MessageRoleAssistant, Content: "Hi there!"}
 	_ = ToChatCompletionMessage(assistantMsg)
 	t.Logf("Assistant message converted successfully")
 
 	// Test assistant message with tool call
-	assistantWithToolMsg := &Message{
+	assistantWithToolMsg := &ModelMessage{
 		Role:    MessageRoleAssistant,
 		Content: "I'll call a tool",
 		ToolCall: &ToolCall{
@@ -216,7 +216,7 @@ func TestToChatCompletionMessage(t *testing.T) {
 	t.Logf("Tool message converted successfully")
 
 	// Test tool message
-	toolMsg := &Message{
+	toolMsg := &ModelMessage{
 		Role:    "tool",
 		Content: "tool result",
 		ToolCall: &ToolCall{

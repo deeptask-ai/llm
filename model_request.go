@@ -6,9 +6,9 @@ package easyllm
 type ModelRequest struct {
 	Instructions string
 	Model        string
-	Messages     []*Message
+	Messages     []*ModelMessage
 	Config       *ModelConfig
-	Tools        []Tool
+	Tools        []ModelTool
 	Cost         bool
 }
 
@@ -68,10 +68,10 @@ type EmbeddingModelConfig struct {
 }
 
 type ImageRequest struct {
-	Model        string             `json:"model"`
-	Instructions string             `json:"instructions"`
-	Artifacts    []*MessageArtifact `json:"artifacts"`
-	Config       *ImageModelConfig  `json:"config,omitempty"`
+	Model        string            `json:"model"`
+	Instructions string            `json:"instructions"`
+	Artifacts    []*ModelArtifact  `json:"artifacts"`
+	Config       *ImageModelConfig `json:"config,omitempty"`
 }
 
 type ImageModelConfig struct {

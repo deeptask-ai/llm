@@ -8,7 +8,7 @@ import (
 	"fmt"
 )
 
-type MessageArtifact struct {
+type ModelArtifact struct {
 	ID          string            `json:"id"`
 	Name        string            `json:"name" binding:"required"`
 	ContentType string            `json:"contentType" binding:"required"`
@@ -17,14 +17,11 @@ type MessageArtifact struct {
 	Metadata    map[string]string `json:"metadata"`
 }
 
-// Message represents a communication unit with a specific role and content.
-// It is used for constructing messages in agent-based communication.
-type Message struct {
-	ID        string             `json:"id"`
-	Role      MessageRole        `json:"role"`
-	Content   string             `json:"content"`
-	Artifacts []*MessageArtifact `json:"artifacts"`
-	ToolCall  *ToolCall          `json:"toolCall"`
+type ModelMessage struct {
+	Role      MessageRole      `json:"role"`
+	Content   string           `json:"content"`
+	Artifacts []*ModelArtifact `json:"artifacts"`
+	ToolCall  *ToolCall        `json:"toolCall"`
 }
 
 // StreamChunkType defines the type of chunk in the API stream

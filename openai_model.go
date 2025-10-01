@@ -318,7 +318,7 @@ func (p *OpenAIModel) GenerateImage(ctx context.Context, req *ImageRequest) (*Im
 	}, nil
 }
 
-func ToChatCompletionParams(model string, instructions string, messages []*Message, config *ModelConfig, tools []Tool) openai.ChatCompletionNewParams {
+func ToChatCompletionParams(model string, instructions string, messages []*ModelMessage, config *ModelConfig, tools []ModelTool) openai.ChatCompletionNewParams {
 	openaiMessages := make([]openai.ChatCompletionMessageParamUnion, 0, len(messages)+1)
 
 	// Add system content if provided
@@ -410,7 +410,7 @@ func ToChatCompletionParams(model string, instructions string, messages []*Messa
 	return params
 }
 
-func ToChatCompletionMessage(msg *Message) openai.ChatCompletionMessageParamUnion {
+func ToChatCompletionMessage(msg *ModelMessage) openai.ChatCompletionMessageParamUnion {
 	if string(msg.Role) == string(openai.MessageRoleUser) {
 		return openai.UserMessage(msg.Content)
 	} else if string(msg.Role) == string(openai.MessageRoleAssistant) {

@@ -4,7 +4,7 @@ import (
 	"context"
 )
 
-type Tool interface {
+type ModelTool interface {
 	Name() string
 
 	Description() string

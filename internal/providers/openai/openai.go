@@ -99,12 +99,15 @@ func NewOpenAICompletionModel(apiKey string, opts ...option.RequestOption) (*Ope
 	return &OpenAICompletionModel{OpenAIBaseModel: base}, nil
 }
 
-func (p *OpenAICompletionModel) Stream(ctx context.Context, req *types.CompletionRequest, tools []types.ModelTool, opts ...types.CompletionOption) (types.StreamCompletionResponse, error) {
-	config := types.ApplyCompletionOptions(opts)
-	params, err := ToChatCompletionParams(req.Model, req.Instructions, req.Messages, config, tools)
+func (p *OpenAICompletionModel) Stream(ctx context.Context, req *types.CompletionRequest, tools []types.ModelTool) (types.StreamCompletionResponse, error) {
+	// Parse options
+	opts := types.ApplyCompletionOptions(req.Options)
+
+	params, err := ToChatCompletionParams(req.Model, req.Instructions, req.Messages, opts, tools)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create chat completion params: %w", err)
 	}
+
 	stream := p.client.Chat.Completions.NewStreaming(ctx, params)
 	chunkChan := make(chan types.StreamChunk, 10) // Increased buffer to reduce blocking
 
@@ -166,42 +169,47 @@ func (p *OpenAICompletionModel) Stream(ctx context.Context, req *types.Completio
 			return
 		}
 
-		// Create usage information
-		usage := &types.TokenUsage{
-			TotalInputTokens:      acc.ChatCompletion.Usage.PromptTokens,
-			TotalOutputTokens:     acc.ChatCompletion.Usage.CompletionTokens,
-			TotalReasoningTokens:  acc.ChatCompletion.Usage.CompletionTokensDetails.ReasoningTokens,
-			TotalImages:           0,
-			TotalWebSearches:      0,
-			TotalRequests:         1,
-			TotalCacheReadTokens:  acc.ChatCompletion.Usage.PromptTokensDetails.CachedTokens,
-			TotalCacheWriteTokens: 0,
-		}
+		// Check if usage information should be included
+		if opts.WithUsage != nil && *opts.WithUsage {
+			// Create usage information
+			usage := &types.TokenUsage{
+				TotalInputTokens:      acc.ChatCompletion.Usage.PromptTokens,
+				TotalOutputTokens:     acc.ChatCompletion.Usage.CompletionTokens,
+				TotalReasoningTokens:  acc.ChatCompletion.Usage.CompletionTokensDetails.ReasoningTokens,
+				TotalImages:           0,
+				TotalWebSearches:      0,
+				TotalRequests:         1,
+				TotalCacheReadTokens:  acc.ChatCompletion.Usage.PromptTokensDetails.CachedTokens,
+				TotalCacheWriteTokens: 0,
+			}
 
-		// Calculate cost if requested
-		var cost *float64
-		if config != nil && config.WithCost {
-			modelInfo := p.getModelInfo(req.Model)
-			cost = common.CalculateCost(modelInfo, usage)
-		}
+			// Calculate cost if requested
+			var cost *float64
+			if opts.WithCost != nil && *opts.WithCost {
+				modelInfo := p.getModelInfo(req.Model)
+				cost = common.CalculateCost(modelInfo, usage)
+			}
 
-		// Send usage information at the end
-		select {
-		case chunkChan <- types.StreamUsageChunk{
-			Usage: usage,
-			Cost:  cost,
-		}:
-		case <-ctx.Done():
-			return
+			// Send usage information at the end
+			select {
+			case chunkChan <- types.StreamUsageChunk{
+				Usage: usage,
+				Cost:  cost,
+			}:
+			case <-ctx.Done():
+				return
+			}
 		}
 	}()
 
 	return chunkChan, nil
 }
 
-func (p *OpenAICompletionModel) Complete(ctx context.Context, req *types.CompletionRequest, tools []types.ModelTool, opts ...types.CompletionOption) (*types.CompletionResponse, error) {
-	config := types.ApplyCompletionOptions(opts)
-	params, err := ToChatCompletionParams(req.Model, req.Instructions, req.Messages, config, tools)
+func (p *OpenAICompletionModel) Complete(ctx context.Context, req *types.CompletionRequest, tools []types.ModelTool) (*types.CompletionResponse, error) {
+	// Parse options
+	opts := types.ApplyCompletionOptions(req.Options)
+
+	params, err := ToChatCompletionParams(req.Model, req.Instructions, req.Messages, opts, tools)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create chat completion params: %w", err)
 	}
@@ -214,22 +222,28 @@ func (p *OpenAICompletionModel) Complete(ctx context.Context, req *types.Complet
 	if len(resp.Choices) == 0 {
 		return nil, types.ErrEmptyContent
 	}
-	usage := &types.TokenUsage{
-		TotalInputTokens:      resp.Usage.PromptTokens,
-		TotalOutputTokens:     resp.Usage.CompletionTokens,
-		TotalReasoningTokens:  resp.Usage.CompletionTokensDetails.ReasoningTokens,
-		TotalImages:           0,
-		TotalWebSearches:      0,
-		TotalRequests:         1,
-		TotalCacheReadTokens:  resp.Usage.PromptTokensDetails.CachedTokens,
-		TotalCacheWriteTokens: 0,
-	}
 
-	// Calculate cost if requested
+	var usage *types.TokenUsage
 	var cost *float64
-	if config != nil && config.WithCost {
-		modelInfo := p.getModelInfo(req.Model)
-		cost = common.CalculateCost(modelInfo, usage)
+
+	// Include usage information if requested
+	if opts.WithUsage != nil && *opts.WithUsage {
+		usage = &types.TokenUsage{
+			TotalInputTokens:      resp.Usage.PromptTokens,
+			TotalOutputTokens:     resp.Usage.CompletionTokens,
+			TotalReasoningTokens:  resp.Usage.CompletionTokensDetails.ReasoningTokens,
+			TotalImages:           0,
+			TotalWebSearches:      0,
+			TotalRequests:         1,
+			TotalCacheReadTokens:  resp.Usage.PromptTokensDetails.CachedTokens,
+			TotalCacheWriteTokens: 0,
+		}
+
+		// Calculate cost if requested
+		if opts.WithCost != nil && *opts.WithCost {
+			modelInfo := p.getModelInfo(req.Model)
+			cost = common.CalculateCost(modelInfo, usage)
+		}
 	}
 
 	output := resp.Choices[0].Message.Content
@@ -474,7 +488,7 @@ func (m *OpenAIModel) ClearModelCache() {
 
 // Helper functions
 
-func ToChatCompletionParams(model string, instructions string, messages []*types.ModelMessage, config *types.CompletionOptions, tools []types.ModelTool) (openai.ChatCompletionNewParams, error) {
+func ToChatCompletionParams(model string, instructions string, messages []*types.ModelMessage, opts *types.CompletionOptions, tools []types.ModelTool) (openai.ChatCompletionNewParams, error) {
 	openaiMessages := make([]openai.ChatCompletionMessageParamUnion, 0, len(messages)+1)
 
 	// Add system content if provided
@@ -511,27 +525,27 @@ func ToChatCompletionParams(model string, instructions string, messages []*types
 		params.Tools = openaiTools
 	}
 
-	if config != nil {
-		if config.Temperature != nil {
-			params.Temperature = openai.Float(*config.Temperature)
+	if opts != nil {
+		if opts.Temperature != nil && *opts.Temperature != 0 {
+			params.Temperature = openai.Float(*opts.Temperature)
 		}
-		if config.TopP != nil {
-			params.TopP = openai.Float(*config.TopP)
+		if opts.TopP != nil && *opts.TopP != 0 {
+			params.TopP = openai.Float(*opts.TopP)
 		}
-		if config.MaxTokens != nil {
-			params.MaxTokens = openai.Int(int64(*config.MaxTokens))
+		if opts.MaxTokens != nil && *opts.MaxTokens != 0 {
+			params.MaxTokens = openai.Int(int64(*opts.MaxTokens))
 		}
-		if config.PresencePenalty != nil {
-			params.PresencePenalty = openai.Float(*config.PresencePenalty)
+		if opts.PresencePenalty != nil && *opts.PresencePenalty != 0 {
+			params.PresencePenalty = openai.Float(*opts.PresencePenalty)
 		}
-		if config.FrequencyPenalty != nil {
-			params.FrequencyPenalty = openai.Float(*config.FrequencyPenalty)
+		if opts.FrequencyPenalty != nil && *opts.FrequencyPenalty != 0 {
+			params.FrequencyPenalty = openai.Float(*opts.FrequencyPenalty)
 		}
-		if config.Seed != nil {
-			params.Seed = openai.Int(*config.Seed)
+		if opts.Seed != nil && *opts.Seed != 0 {
+			params.Seed = openai.Int(*opts.Seed)
 		}
-		if config.ReasoningEffort != nil {
-			switch *config.ReasoningEffort {
+		if opts.ReasoningEffort != nil {
+			switch *opts.ReasoningEffort {
 			case types.ReasoningEffortLow:
 				params.ReasoningEffort = openai.ReasoningEffortLow
 			case types.ReasoningEffortMedium:
@@ -541,16 +555,14 @@ func ToChatCompletionParams(model string, instructions string, messages []*types
 			default:
 				params.ReasoningEffort = openai.ReasoningEffortLow
 			}
-		} else {
-			params.ReasoningEffort = openai.ReasoningEffortLow
 		}
-		if len(config.Stop) > 0 {
+		if len(opts.Stop) > 0 {
 			params.Stop = openai.ChatCompletionNewParamsStopUnion{
-				OfStringArray: config.Stop,
+				OfStringArray: opts.Stop,
 			}
 		}
-		if config.ResponseFormat != nil {
-			if *config.ResponseFormat == types.ResponseFormatJson {
+		if opts.ResponseFormat != nil {
+			if *opts.ResponseFormat == types.ResponseFormatJson {
 				params.ResponseFormat = openai.ChatCompletionNewParamsResponseFormatUnion{
 					OfJSONObject: &openai.ResponseFormatJSONObjectParam{},
 				}
@@ -559,7 +571,7 @@ func ToChatCompletionParams(model string, instructions string, messages []*types
 					OfJSONSchema: &openai.ResponseFormatJSONSchemaParam{
 						JSONSchema: openai.ResponseFormatJSONSchemaJSONSchemaParam{
 							Name:   "response_schema",
-							Schema: config.JSONSchema,
+							Schema: opts.JSONSchema,
 						},
 					},
 				}

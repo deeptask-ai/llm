@@ -10,15 +10,16 @@ import (
 type CompletionModel interface {
 	BaseModel
 	// Stream generates streaming content from the model
-	Stream(ctx context.Context, req *CompletionRequest, tools []ModelTool, opts ...CompletionOption) (StreamCompletionResponse, error)
+	Stream(ctx context.Context, req *CompletionRequest, tools []ModelTool) (StreamCompletionResponse, error)
 	// Complete generates complete content from the model
-	Complete(ctx context.Context, req *CompletionRequest, tools []ModelTool, opts ...CompletionOption) (*CompletionResponse, error)
+	Complete(ctx context.Context, req *CompletionRequest, tools []ModelTool) (*CompletionResponse, error)
 }
 
 type CompletionRequest struct {
-	Model        string
 	Instructions string
+	Model        string
 	Messages     []*ModelMessage
+	Options      []CompletionOption
 }
 
 // StreamModelResponse represents a stream of API chunks
@@ -84,7 +85,6 @@ type StreamUsageChunk struct {
 func (c StreamUsageChunk) Type() StreamChunkType {
 	return UsageChunkType
 }
-
 func (c StreamUsageChunk) String() string {
 	jsonBytes, err := json.Marshal(c.Usage)
 	if err != nil {
@@ -108,7 +108,8 @@ type CompletionOptions struct {
 	Stop             []string
 	ResponseFormat   *ResponseFormat
 	JSONSchema       any
-	WithCost         bool
+	WithCost         *bool
+	WithUsage        *bool
 }
 
 // WithTemperature sets the temperature for sampling
@@ -182,9 +183,16 @@ func WithJSONSchema(schema any) CompletionOption {
 }
 
 // WithCost enables cost calculation in the response
-func WithCost() CompletionOption {
+func WithCost(enabled bool) CompletionOption {
 	return func(o *CompletionOptions) {
-		o.WithCost = true
+		o.WithCost = &enabled
+	}
+}
+
+// WithUsage enables usage information in the response
+func WithUsage(enabled bool) CompletionOption {
+	return func(o *CompletionOptions) {
+		o.WithUsage = &enabled
 	}
 }
 

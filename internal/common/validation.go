@@ -46,6 +46,14 @@ func ValidateCompletionRequest(req *types.CompletionRequest) error {
 		}
 	}
 
+	// Validate options if provided
+	if len(req.Options) > 0 {
+		config := types.ApplyCompletionOptions(req.Options)
+		if err := ValidateCompletionOptions(config); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

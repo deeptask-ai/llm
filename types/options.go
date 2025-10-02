@@ -4,7 +4,7 @@
 package types
 
 import (
-	"github.com/openai/openai-go/option"
+	"github.com/openai/openai-go/v3/option"
 )
 
 // ModelOption is a functional option for configuring models

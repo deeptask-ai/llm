@@ -12,17 +12,17 @@ import (
 
 func main() {
 	// Get API key from environment variable
-	apiKey := os.Getenv("OPENAI_API_KEY")
+	apiKey := os.Getenv("DEEPSEEK_API_KEY")
 	if apiKey == "" {
-		log.Fatal("OPENAI_API_KEY environment variable is required")
+		log.Fatal("DEEPSEEK_API_KEY environment variable is required")
 	}
 
-	// Create OpenAI completion model
-	model, err := easyllm.NewOpenAIModel(
+	// Create DeepSeek completion model
+	model, err := easyllm.NewDeepSeekModel(
 		types.WithAPIKey(apiKey),
 	)
 	if err != nil {
-		log.Fatalf("Failed to create OpenAI model: %v", err)
+		log.Fatalf("Failed to create DeepSeek model: %v", err)
 	}
 
 	ctx := context.Background()
@@ -30,7 +30,7 @@ func main() {
 	// Example 1: Basic streaming
 	fmt.Println("=== Example 1: Basic Streaming ===")
 	req := &types.CompletionRequest{
-		Model:        "gpt-4o-mini",
+		Model:        "deepseek-chat",
 		Instructions: "You are a helpful assistant.",
 		Messages: []*types.ModelMessage{
 			{

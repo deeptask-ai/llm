@@ -30,13 +30,16 @@ func main() {
 	// Example 1: Basic streaming
 	fmt.Println("=== Example 1: Basic Streaming ===")
 	req := &types.CompletionRequest{
-		Model:        "gpt-4o-mini",
+		Model:        "o4-mini",
 		Instructions: "You are a helpful assistant.",
 		Messages: []*types.ModelMessage{
 			{
 				Role:    types.MessageRoleUser,
 				Content: "Count from 1 to 5 and explain each number briefly.",
 			},
+		},
+		Options: []types.CompletionOption{
+			types.WithReasoningEffort(types.ReasoningEffortLow),
 		},
 	}
 

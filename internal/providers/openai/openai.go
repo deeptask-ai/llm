@@ -8,11 +8,11 @@ import (
 	"fmt"
 	"github.com/easymvp/easyllm/internal/common"
 	"github.com/easymvp/easyllm/types"
+	"github.com/openai/openai-go/v3"
 	"strconv"
 	"sync"
 
-	"github.com/openai/openai-go"
-	"github.com/openai/openai-go/option"
+	"github.com/openai/openai-go/v3/option"
 )
 
 //go:embed openai.json
@@ -143,6 +143,17 @@ func (p *OpenAICompletionModel) Stream(ctx context.Context, req *types.Completio
 					select {
 					case chunkChan <- types.StreamTextChunk{
 						Text: text,
+					}:
+					case <-ctx.Done():
+						// Context canceled while sending
+						return
+					}
+				} else if f, ok := chunk.Choices[0].Delta.JSON.ExtraFields["reasoning_content"]; ok {
+					reasoning := f.Raw()
+					reasoning = reasoning[1 : len(reasoning)-1]
+					select {
+					case chunkChan <- types.StreamReasoningChunk{
+						Reasoning: reasoning,
 					}:
 					case <-ctx.Done():
 						// Context canceled while sending
@@ -512,17 +523,7 @@ func ToChatCompletionParams(model string, instructions string, messages []*types
 
 	// Add tools if provided
 	if len(tools) > 0 {
-		openaiTools := make([]openai.ChatCompletionToolParam, 0, len(tools))
-		for _, tool := range tools {
-			openaiTool := openai.ChatCompletionToolParam{
-				Function: openai.FunctionDefinitionParam{
-					Name:        tool.Name(),
-					Description: openai.String(tool.Description()),
-				},
-			}
-			openaiTools = append(openaiTools, openaiTool)
-		}
-		params.Tools = openaiTools
+
 	}
 
 	if opts != nil {

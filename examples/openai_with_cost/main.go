@@ -3,10 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/easymvp/easyllm"
 	"log"
 	"os"
 
+	"github.com/easymvp/easyllm"
 	"github.com/easymvp/easyllm/types"
 )
 
@@ -27,8 +27,8 @@ func main() {
 
 	ctx := context.Background()
 
-	// Example 1: Basic completion
-	fmt.Println("=== Example 1: Basic Completion ===")
+	// Example: Basic completion with cost tracking enabled
+	fmt.Println("=== OpenAI Completion with Cost Tracking ===")
 	req := &types.CompletionRequest{
 		Model:        "gpt-4o-mini",
 		Instructions: "You are a helpful assistant.",
@@ -38,6 +38,10 @@ func main() {
 				Content: "What is the capital of France?",
 			},
 		},
+		Options: []types.CompletionOption{
+			types.WithCost(true),
+			types.WithUsage(true),
+		},
 	}
 
 	resp, err := model.Complete(ctx, req, nil)
@@ -45,5 +49,22 @@ func main() {
 		log.Fatalf("Completion failed: %v", err)
 	}
 
-	fmt.Printf("Response: %s\n", resp.Output)
+	fmt.Printf("\nResponse: %s\n", resp.Output)
+
+	// Print usage information
+	if resp.Usage != nil {
+		fmt.Printf("\n=== Usage Information ===\n")
+		fmt.Printf("Input tokens: %d\n", resp.Usage.TotalInputTokens)
+		fmt.Printf("Output tokens: %d\n", resp.Usage.TotalOutputTokens)
+		fmt.Printf("Reasoning tokens: %d\n", resp.Usage.TotalReasoningTokens)
+	}
+
+	// Print cost information
+	if resp.Cost != nil {
+		fmt.Printf("\n=== Cost Information ===\n")
+		fmt.Printf("Total cost: $%.6f\n", *resp.Cost)
+	} else {
+		fmt.Println("\n=== Cost Information ===")
+		fmt.Println("Cost information not available")
+	}
 }

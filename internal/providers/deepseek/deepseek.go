@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"github.com/easymvp/easyllm/internal/providers/openai"
 	"github.com/easymvp/easyllm/types"
-	"github.com/openai/openai-go/option"
+	"github.com/openai/openai-go/v3/option"
 )
 
 type DeepSeekModel struct {

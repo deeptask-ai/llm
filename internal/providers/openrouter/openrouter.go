@@ -7,7 +7,7 @@ import (
 	"github.com/easymvp/easyllm/types"
 	"net/http"
 
-	"github.com/openai/openai-go/option"
+	"github.com/openai/openai-go/v3/option"
 )
 
 type OpenRouterModelInfo struct {

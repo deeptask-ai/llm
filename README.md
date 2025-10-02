@@ -55,36 +55,44 @@ import (
     "log"
 
     "github.com/easymvp/easyllm"
+    "github.com/easymvp/easyllm/types"
+    "github.com/easymvp/easyllm/types/completion"
 )
 
 func main() {
     // Initialize OpenAI client
-    client, err := easyllm.NewOpenAIModel(easyllm.OpenAIModelConfig{
-        APIKey: "your-openai-api-key",
-    })
+    model, err := easyllm.NewOpenAIModel(
+        types.WithAPIKey("your-openai-api-key"),
+    )
     if err != nil {
         log.Fatal(err)
     }
 
     // Create a request
-    req := &easyllm.ModelRequest{
-        Model: "gpt-4",
-        Messages: []*easyllm.Message{
+    req := &completion.CompletionRequest{
+        Model:        "gpt-4o-mini",
+        Instructions: "You are a helpful assistant.",
+        Messages: []*types.ModelMessage{
             {
-                Role:    easyllm.MessageRoleUser,
+                Role:    types.MessageRoleUser,
                 Content: "What is the capital of France?",
             },
+        },
+        Options: []completion.CompletionOption{
+            completion.WithCost(true),
         },
     }
 
     // Generate response
-    resp, err := client.GenerateContent(context.Background(), req)
+    resp, err := model.Complete(context.Background(), req, nil)
     if err != nil {
         log.Fatal(err)
     }
 
-    fmt.Println("Response:", resp.Content)
-    fmt.Printf("Cost: $%.6f\n", *resp.Cost)
+    fmt.Println("Response:", resp.Output)
+    if resp.Cost != nil {
+        fmt.Printf("Cost: $%.6f\n", *resp.Cost)
+    }
 }
 ```
 
@@ -92,32 +100,32 @@ func main() {
 
 ```go
 func streamExample() {
-    client, _ := easyllm.NewOpenAIModel(easyllm.OpenAIModelConfig{
-        APIKey: "your-api-key",
-    })
+    model, _ := easyllm.NewOpenAIModel(
+        types.WithAPIKey("your-api-key"),
+    )
 
-    req := &easyllm.ModelRequest{
-        Model: "gpt-4",
-        Messages: []*easyllm.Message{
+    req := &completion.CompletionRequest{
+        Model:        "gpt-4o-mini",
+        Instructions: "You are a helpful assistant.",
+        Messages: []*types.ModelMessage{
             {
-                Role:    easyllm.MessageRoleUser,
+                Role:    types.MessageRoleUser,
                 Content: "Write a short story about AI",
             },
         },
     }
 
-    stream, err := client.GenerateContentStream(context.Background(), req)
+    stream, err := model.StreamComplete(context.Background(), req, nil)
     if err != nil {
         log.Fatal(err)
     }
 
     for chunk := range stream {
-        switch chunk.Type() {
-        case easyllm.StreamChunkTypeText:
-            fmt.Print(chunk.(*easyllm.StreamTextChunk).Text)
-        case easyllm.StreamChunkTypeUsage:
-            usage := chunk.(*easyllm.StreamUsageChunk).Usage
-            fmt.Printf("\nTokens used: %d\n", usage.TotalTokens)
+        switch c := chunk.(type) {
+        case types.StreamTextChunk:
+            fmt.Print(c.Text)
+        case types.StreamUsageChunk:
+            fmt.Printf("\nTokens used: %d\n", c.Usage.TotalInputTokens+c.Usage.TotalOutputTokens)
         }
     }
 }
@@ -127,144 +135,103 @@ func streamExample() {
 
 ```go
 func multiProviderExample() {
-    var models []easyllm.Model
+    // Initialize multiple providers
+    openai, _ := easyllm.NewOpenAIModel(
+        types.WithAPIKey("openai-key"),
+    )
 
-    // Add multiple providers
-    openai, _ := easyllm.NewOpenAIModel(easyllm.OpenAIModelConfig{
-        APIKey: "openai-key",
-    })
-    models = append(models, openai)
+    deepseek, _ := easyllm.NewDeepSeekModel(
+        types.WithAPIKey("deepseek-key"),
+    )
 
-    claude, _ := easyllm.NewClaudeModel(easyllm.ClaudeModelConfig{
-        APIKey: "claude-key",
-    })
-    models = append(models, claude)
-
-    gemini, _ := easyllm.NewGeminiModel(easyllm.GeminiModelConfig{
-        APIKey: "gemini-key",
-    })
-    models = append(models, gemini)
-
-    req := &easyllm.ModelRequest{
-        Model: "gpt-4", // or "claude-3-sonnet", "gemini-pro", etc.
-        Messages: []*easyllm.Message{
+    req := &completion.CompletionRequest{
+        Model:        "gpt-4o-mini", // or "deepseek-chat", etc.
+        Instructions: "You are a helpful assistant.",
+        Messages: []*types.ModelMessage{
             {
-                Role:    easyllm.MessageRoleUser,
+                Role:    types.MessageRoleUser,
                 Content: "Explain quantum computing",
             },
         },
     }
 
-    // Use any provider with the same interface
-    for _, model := range models {
-        fmt.Printf("Provider: %s\n", model.Name())
-        resp, _ := model.GenerateContent(context.Background(), req)
-        fmt.Printf("Response: %s\n\n", resp.Content)
-    }
+    // Use OpenAI
+    resp1, _ := openai.Complete(context.Background(), req, nil)
+    fmt.Printf("OpenAI Response: %s\n\n", resp1.Output)
+
+    // Use DeepSeek with same request structure
+    req.Model = "deepseek-chat"
+    resp2, _ := deepseek.Complete(context.Background(), req, nil)
+    fmt.Printf("DeepSeek Response: %s\n\n", resp2.Output)
 }
 ```
 
-### Function Calling
+### Reasoning Models
 
 ```go
-type WeatherTool struct{}
+func reasoningExample() {
+    // Use reasoning model with completion API
+    model, _ := easyllm.NewOpenAIModel(
+        types.WithAPIKey("your-api-key"),
+    )
 
-func (w WeatherTool) Name() string { return "get_weather" }
-func (w WeatherTool) Description() string { return "Get current weather for a location" }
-func (w WeatherTool) Parameters() interface{} {
-    return map[string]interface{}{
-        "type": "object",
-        "properties": map[string]interface{}{
-            "location": map[string]interface{}{
-                "type": "string",
-                "description": "City name",
-            },
-        },
-        "required": []string{"location"},
-    }
-}
-
-func functionCallingExample() {
-    client, _ := easyllm.NewOpenAIModel(easyllm.OpenAIModelConfig{
-        APIKey: "your-api-key",
-    })
-
-    req := &easyllm.ModelRequest{
-        Model: "gpt-4",
-        Messages: []*easyllm.Message{
+    req := &completion.CompletionRequest{
+        Model:        "o4-mini",
+        Instructions: "You are a helpful assistant.",
+        Messages: []*types.ModelMessage{
             {
-                Role:    easyllm.MessageRoleUser,
-                Content: "What's the weather like in Tokyo?",
+                Role:    types.MessageRoleUser,
+                Content: "Solve this logic puzzle: If all A are B, and all B are C, what can we conclude?",
             },
         },
-        Tools: []easyllm.Tool{WeatherTool{}},
+        Options: []completion.CompletionOption{
+            completion.WithReasoningEffort(completion.ReasoningEffortLow),
+        },
     }
 
-    resp, _ := client.GenerateContent(context.Background(), req)
+    resp, _ := model.Complete(context.Background(), req, nil)
+    fmt.Printf("Response: %s\n", resp.Output)
     
-    // Handle tool calls in response
-    for _, toolCall := range resp.ToolCalls {
-        fmt.Printf("Tool: %s, Args: %s\n", toolCall.Name, toolCall.Arguments)
+    // Access reasoning tokens if available
+    if resp.Usage != nil {
+        fmt.Printf("Reasoning tokens: %d\n", resp.Usage.TotalReasoningTokens)
     }
 }
 ```
 
-### Embeddings
+### Conversation API (Reasoning Models)
 
 ```go
-func embeddingsExample() {
-    client, _ := easyllm.NewOpenAIModel(easyllm.OpenAIModelConfig{
-        APIKey: "your-api-key",
-    })
+func conversationExample() {
+    // Use conversation API for advanced reasoning
+    model, _ := easyllm.NewOpenAIConversationModel(
+        types.WithAPIKey("your-api-key"),
+    )
 
-    req := &easyllm.EmbeddingRequest{
-        Model: "text-embedding-3-small",
-        Input: []string{
-            "The quick brown fox jumps over the lazy dog",
-            "Machine learning is a subset of artificial intelligence",
+    req := &conversation.ConversationRequest{
+        Model: "o4-mini",
+        Input: "Explain the theory of relativity in simple terms.",
+        Options: []conversation.ResponseOption{
+            conversation.WithReasoningEffort(conversation.ReasoningEffortMedium),
+            conversation.WithReasoningSummary("detailed"),
         },
     }
 
-    resp, err := client.GenerateEmbeddings(context.Background(), req)
+    stream, err := model.StreamResponse(context.Background(), req, nil)
     if err != nil {
         log.Fatal(err)
     }
 
-    for i, embedding := range resp.Embeddings {
-        fmt.Printf("Text %d embedding dimensions: %d\n", i+1, len(embedding.Values))
+    for chunk := range stream {
+        switch c := chunk.(type) {
+        case types.StreamTextChunk:
+            fmt.Print(c.Text)
+        }
     }
+    fmt.Println()
 }
 ```
 
-### Image Generation
-
-```go
-func imageGenerationExample() {
-    client, _ := easyllm.NewOpenAIModel(easyllm.OpenAIModelConfig{
-        APIKey: "your-api-key",
-    })
-
-    req := &easyllm.ImageRequest{
-        Model:  "dall-e-3",
-        Prompt: "A futuristic city with flying cars and neon lights",
-        Config: &easyllm.ImageModelConfig{
-            Size:    "1024x1024",
-            Quality: "hd",
-            N:       1,
-        },
-    }
-
-    resp, err := client.GenerateImage(context.Background(), req)
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    fmt.Printf("Generated %d images\n", len(resp.Images))
-    for i, img := range resp.Images {
-        fmt.Printf("Image %d URL: %s\n", i+1, img.URL)
-    }
-}
-```
 
 ## Supported Models
 
@@ -302,23 +269,20 @@ export DEEPSEEK_API_KEY="your-deepseek-key"
 
 ```go
 // OpenAI with custom base URL
-openai, _ := easyllm.NewOpenAIModel(easyllm.OpenAIModelConfig{
-    APIKey:  "key",
-    BaseURL: "https://api.openai.com/v1", // Optional
-})
+openai, _ := easyllm.NewOpenAIModel(
+    types.WithAPIKey("key"),
+    types.WithBaseURL("https://api.openai.com/v1"), // Optional
+)
 
-// Azure OpenAI
-azure, _ := easyllm.NewAzureOpenAIModel(easyllm.AzureOpenAIModelConfig{
-    APIKey:     "key",
-    BaseURL:    "https://your-resource.openai.azure.com",
-    APIVersion: "2024-02-15-preview",
-})
+// DeepSeek
+deepseek, _ := easyllm.NewDeepSeekModel(
+    types.WithAPIKey("key"),
+)
 
-// Claude with custom settings
-claude, _ := easyllm.NewClaudeModel(easyllm.ClaudeModelConfig{
-    APIKey:  "key",
-    BaseURL: "https://api.anthropic.com", // Optional
-})
+// Using environment variables
+model, _ := easyllm.NewOpenAIModel(
+    types.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
+)
 ```
 
 ## Error Handling
@@ -345,7 +309,23 @@ if err != nil {
 ## Cost Tracking
 
 ```go
-resp, _ := client.GenerateContent(ctx, req)
+// Enable cost tracking with options
+req := &completion.CompletionRequest{
+    Model:        "gpt-4o-mini",
+    Instructions: "You are a helpful assistant.",
+    Messages: []*types.ModelMessage{
+        {
+            Role:    types.MessageRoleUser,
+            Content: "Hello!",
+        },
+    },
+    Options: []completion.CompletionOption{
+        completion.WithCost(true),
+        completion.WithUsage(true),
+    },
+}
+
+resp, _ := model.Complete(ctx, req, nil)
 
 // Access cost information
 if resp.Cost != nil {
@@ -353,42 +333,13 @@ if resp.Cost != nil {
 }
 
 // Access detailed usage
-usage := resp.Usage
-fmt.Printf("Input tokens: %d\n", usage.InputTokens)
-fmt.Printf("Output tokens: %d\n", usage.OutputTokens)
-fmt.Printf("Total tokens: %d\n", usage.TotalTokens)
-
-// Calculate cost manually
-modelInfo := client.SupportedModels()[0] // Get model info
-cost := easyllm.CalculateCost(modelInfo, usage)
-```
-
-## JSON Schema Generation
-
-```go
-type Person struct {
-    Name    string `json:"name"`
-    Age     int    `json:"age"`
-    Email   string `json:"email"`
-}
-
-// Generate schema for structured output
-schema := easyllm.GenerateSchema[Person]()
-
-req := &easyllm.ModelRequest{
-    Model: "gpt-4",
-    Messages: []*easyllm.Message{
-        {
-            Role:    easyllm.MessageRoleUser,
-            Content: "Extract person information from: John Doe, 30 years old, john@example.com",
-        },
-    },
-    Config: &easyllm.ModelConfig{
-        ResponseFormat: easyllm.ResponseFormatJSON,
-        JSONSchema:     schema,
-    },
+if resp.Usage != nil {
+    fmt.Printf("Input tokens: %d\n", resp.Usage.TotalInputTokens)
+    fmt.Printf("Output tokens: %d\n", resp.Usage.TotalOutputTokens)
+    fmt.Printf("Reasoning tokens: %d\n", resp.Usage.TotalReasoningTokens)
 }
 ```
+
 
 ## Testing
 

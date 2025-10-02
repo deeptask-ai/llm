@@ -1,4 +1,4 @@
-package easyllm
+package schema
 
 import (
 	"reflect"

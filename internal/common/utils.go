@@ -1,4 +1,4 @@
-package easyllm
+package common
 
 import (
 	"bytes"
@@ -8,7 +8,7 @@ import (
 	"sync"
 	"text/template"
 
-	"github.com/easymvp/easyllm/internal/conversion"
+	"github.com/easymvp/easyllm"
 )
 
 // Legacy errors - kept for backward compatibility
@@ -28,7 +28,7 @@ var (
 
 // CalculateCost calculates the cost based on token usage and model pricing information
 // This function is shared across all model implementations
-func CalculateCost(modelInfo *ModelInfo, usage *TokenUsage) *float64 {
+func CalculateCost(modelInfo *easyllm.ModelInfo, usage *easyllm.TokenUsage) *float64 {
 	if modelInfo == nil {
 		return nil
 	}
@@ -73,17 +73,23 @@ func CalculateCost(modelInfo *ModelInfo, usage *TokenUsage) *float64 {
 }
 
 // CalculateImageCost calculates cost for image generation
-// Delegates to internal/conversion package for consistency
-func CalculateImageCost(modelInfo *ModelInfo, imageCount int) *float64 {
+func CalculateImageCost(modelInfo *easyllm.ModelInfo, imageCount int) *float64 {
 	if modelInfo == nil {
 		return nil
 	}
-	return conversion.CalculateImageCost(modelInfo.Pricing.Image, imageCount)
+	
+	imagePrice, err := strconv.ParseFloat(modelInfo.Pricing.Image, 64)
+	if err != nil {
+		return nil
+	}
+	
+	totalCost := imagePrice * float64(imageCount)
+	return &totalCost
 }
 
 // CreateTokenUsage creates a standardized TokenUsage struct
-func CreateTokenUsage(inputTokens, outputTokens, reasoningTokens int64, images, requests int, cacheReadTokens, cacheWriteTokens int64) *TokenUsage {
-	return &TokenUsage{
+func CreateTokenUsage(inputTokens, outputTokens, reasoningTokens int64, images, requests int, cacheReadTokens, cacheWriteTokens int64) *easyllm.TokenUsage {
+	return &easyllm.TokenUsage{
 		TotalInputTokens:      inputTokens,
 		TotalOutputTokens:     outputTokens,
 		TotalReasoningTokens:  reasoningTokens,
@@ -96,7 +102,7 @@ func CreateTokenUsage(inputTokens, outputTokens, reasoningTokens int64, images, 
 }
 
 // ValidateModelRequest validates common model request fields
-func ValidateModelRequest(req *CompletionRequest) error {
+func ValidateModelRequest(req *easyllm.CompletionRequest) error {
 	if req == nil {
 		return errors.New("request cannot be nil")
 	}
@@ -107,7 +113,7 @@ func ValidateModelRequest(req *CompletionRequest) error {
 }
 
 // ValidateEmbeddingRequest validates embedding request fields
-func ValidateEmbeddingRequest(req *EmbeddingRequest) error {
+func ValidateEmbeddingRequest(req *easyllm.EmbeddingRequest) error {
 	if req == nil {
 		return errors.New("request cannot be nil")
 	}
@@ -121,7 +127,7 @@ func ValidateEmbeddingRequest(req *EmbeddingRequest) error {
 }
 
 // ValidateImageRequest validates image request fields
-func ValidateImageRequest(req *ImageRequest) error {
+func ValidateImageRequest(req *easyllm.ImageRequest) error {
 	if req == nil {
 		return errors.New("request cannot be nil")
 	}
@@ -170,7 +176,7 @@ func ClearTemplateCache() {
 }
 
 // OptimizedCalculateCost is a more efficient version of cost calculation
-func OptimizedCalculateCost(modelInfo *ModelInfo, usage *TokenUsage) *float64 {
+func OptimizedCalculateCost(modelInfo *easyllm.ModelInfo, usage *easyllm.TokenUsage) *float64 {
 	if modelInfo == nil || usage == nil {
 		return nil
 	}

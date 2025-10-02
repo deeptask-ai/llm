@@ -1,4 +1,4 @@
-package easyllm
+package openai
 
 import (
 	"context"
@@ -9,18 +9,19 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/easymvp/easyllm"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 )
 
-//go:embed data/openai.json
+//go:embed ../../models/data/openai.json
 var openaiModels []byte
 
 // OpenAIBaseModel provides base functionality for OpenAI models
 type OpenAIBaseModel struct {
 	client     openai.Client
 	apiKey     string
-	modelCache map[string]*ModelInfo
+	modelCache map[string]*easyllm.ModelInfo
 	cacheMutex sync.RWMutex
 }
 

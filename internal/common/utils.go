@@ -10,15 +10,6 @@ import (
 	"text/template"
 )
 
-// Legacy errors - kept for backward compatibility
-// New code should use errors from errors.go
-var (
-	ErrNoInstructions      = errors.New("no instructions provided")
-	ErrNoCompletionChoices = errors.New("no completion choices returned")
-	ErrNoImageData         = errors.New("no image data returned")
-	ErrModelNotFound       = errors.New("model not found")
-)
-
 // Template cache for better performance
 var (
 	templateCache = make(map[string]*template.Template)
@@ -131,7 +122,7 @@ func ValidateImageRequest(req *types.ImageRequest) error {
 		return errors.New("request cannot be nil")
 	}
 	if req.Instructions == "" {
-		return ErrNoInstructions
+		return types.ErrEmptyInstructions
 	}
 	return nil
 }

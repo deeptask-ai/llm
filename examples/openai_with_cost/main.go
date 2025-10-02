@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/easymvp/easyllm/types/completion"
 	"log"
 	"os"
 
@@ -29,7 +30,7 @@ func main() {
 
 	// Example: Basic completion with cost tracking enabled
 	fmt.Println("=== OpenAI Completion with Cost Tracking ===")
-	req := &types.CompletionRequest{
+	req := &completion.CompletionRequest{
 		Model:        "gpt-4o-mini",
 		Instructions: "You are a helpful assistant.",
 		Messages: []*types.ModelMessage{
@@ -38,9 +39,9 @@ func main() {
 				Content: "What is the capital of France?",
 			},
 		},
-		Options: []types.CompletionOption{
-			types.WithCost(true),
-			types.WithUsage(true),
+		Options: []completion.CompletionOption{
+			completion.WithCost(true),
+			completion.WithUsage(true),
 		},
 	}
 

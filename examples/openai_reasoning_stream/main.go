@@ -40,7 +40,7 @@ func main() {
 			},
 		},
 		Options: []completion.CompletionOption{
-			completion.WithReasoningEffort(types.ReasoningEffortLow),
+			completion.WithReasoningEffort(completion.ReasoningEffortLow),
 		},
 	}
 

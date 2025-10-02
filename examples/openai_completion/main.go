@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/easymvp/easyllm"
+	"github.com/easymvp/easyllm/types/completion"
 	"log"
 	"os"
 
@@ -29,7 +30,7 @@ func main() {
 
 	// Example 1: Basic completion
 	fmt.Println("=== Example 1: Basic Completion ===")
-	req := &types.CompletionRequest{
+	req := &completion.CompletionRequest{
 		Model:        "gpt-4o-mini",
 		Instructions: "You are a helpful assistant.",
 		Messages: []*types.ModelMessage{

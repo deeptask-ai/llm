@@ -1,7 +1,6 @@
 package types
 
 import (
-	"encoding/json"
 	"reflect"
 	"sync"
 
@@ -12,21 +11,6 @@ var (
 	schemaCache = make(map[reflect.Type]interface{})
 	cacheMutex  sync.RWMutex
 )
-
-func GenerateSchemaText[T any]() string {
-	schema := GenerateSchema[T]()
-	jsonBytes, err := json.Marshal(schema)
-	if err != nil {
-		return "{}"
-	}
-	return string(jsonBytes)
-}
-
-type NoneSchema struct{}
-
-func EmptySchema() interface{} {
-	return GenerateSchema[NoneSchema]()
-}
 
 func GenerateSchema[T any]() interface{} {
 	var v T

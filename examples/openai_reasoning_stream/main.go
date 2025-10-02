@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/easymvp/easyllm"
+	"github.com/easymvp/easyllm/types/completion"
 	"log"
 	"os"
 
@@ -29,7 +30,7 @@ func main() {
 
 	// Example 1: Basic streaming
 	fmt.Println("=== Example 1: Basic Streaming ===")
-	req := &types.CompletionRequest{
+	req := &completion.CompletionRequest{
 		Model:        "o4-mini",
 		Instructions: "You are a helpful assistant.",
 		Messages: []*types.ModelMessage{
@@ -38,12 +39,12 @@ func main() {
 				Content: "Count from 1 to 5 and explain each number briefly.",
 			},
 		},
-		Options: []types.CompletionOption{
-			types.WithReasoningEffort(types.ReasoningEffortLow),
+		Options: []completion.CompletionOption{
+			completion.WithReasoningEffort(types.ReasoningEffortLow),
 		},
 	}
 
-	stream, err := model.Stream(ctx, req, nil)
+	stream, err := model.StreamComplete(ctx, req, nil)
 	if err != nil {
 		log.Fatalf("Stream failed: %v", err)
 	}

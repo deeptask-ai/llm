@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/easymvp/easyllm"
-	"github.com/easymvp/easyllm/types/completion"
+	"github.com/easymvp/easyllm/types/conversation"
 	"log"
 	"os"
 
@@ -19,7 +19,7 @@ func main() {
 	}
 
 	// Create OpenAI completion model
-	model, err := easyllm.NewOpenAIModel(
+	model, err := easyllm.NewOpenAIConversationModel(
 		types.WithAPIKey(apiKey),
 	)
 	if err != nil {
@@ -30,18 +30,15 @@ func main() {
 
 	// Example 1: Basic streaming
 	fmt.Println("=== Example 1: Basic Streaming ===")
-	req := &completion.CompletionRequest{
-		Model:        "gpt-4o-mini",
-		Instructions: "You are a helpful assistant.",
-		Messages: []*types.ModelMessage{
-			{
-				Role:    types.MessageRoleUser,
-				Content: "Count from 1 to 5 and explain each number briefly.",
-			},
+	req := &conversation.ConversationRequest{
+		Model: "o4-mini",
+		Input: "You are a helpful assistant.",
+		Options: []conversation.ResponseOption{
+			conversation.WithReasoningEffort(conversation.ReasoningEffortLow),
 		},
 	}
 
-	stream, err := model.StreamComplete(ctx, req, nil)
+	stream, err := model.StreamResponse(ctx, req, nil)
 	if err != nil {
 		log.Fatalf("Stream failed: %v", err)
 	}

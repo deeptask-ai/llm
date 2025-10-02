@@ -6,6 +6,9 @@ package common
 import (
 	"fmt"
 	"github.com/easymvp/easyllm/types"
+	"github.com/easymvp/easyllm/types/completion"
+	"github.com/easymvp/easyllm/types/embedding"
+	"github.com/easymvp/easyllm/types/image"
 	"net/url"
 	"strings"
 )
@@ -25,7 +28,7 @@ const (
 )
 
 // ValidateCompletionRequest performs comprehensive validation on completion requests
-func ValidateCompletionRequest(req *types.CompletionRequest) error {
+func ValidateCompletionRequest(req *completion.CompletionRequest) error {
 	if req == nil {
 		return types.NewValidationError("request", "cannot be nil", nil)
 	}
@@ -48,7 +51,7 @@ func ValidateCompletionRequest(req *types.CompletionRequest) error {
 
 	// Validate options if provided
 	if len(req.Options) > 0 {
-		config := types.ApplyCompletionOptions(req.Options)
+		config := completion.ApplyCompletionOptions(req.Options)
 		if err := ValidateCompletionOptions(config); err != nil {
 			return err
 		}
@@ -131,7 +134,7 @@ func validateArtifact(artifact *types.ModelArtifact, msgIndex, artifactIndex int
 }
 
 // ValidateCompletionOptions validates completion configuration options
-func ValidateCompletionOptions(config *types.CompletionOptions) error {
+func ValidateCompletionOptions(config *completion.CompletionOptions) error {
 	if config == nil {
 		return nil // Config is optional
 	}
@@ -193,10 +196,10 @@ func ValidateCompletionOptions(config *types.CompletionOptions) error {
 
 	// Validate reasoning effort
 	if config.ReasoningEffort != nil {
-		validEfforts := map[types.ReasoningEffort]bool{
-			types.ReasoningEffortLow:    true,
-			types.ReasoningEffortMedium: true,
-			types.ReasoningEffortHigh:   true,
+		validEfforts := map[completion.ReasoningEffort]bool{
+			completion.ReasoningEffortLow:    true,
+			completion.ReasoningEffortMedium: true,
+			completion.ReasoningEffortHigh:   true,
 		}
 		if !validEfforts[*config.ReasoningEffort] {
 			return types.NewValidationError(
@@ -209,9 +212,9 @@ func ValidateCompletionOptions(config *types.CompletionOptions) error {
 
 	// Validate response format
 	if config.ResponseFormat != nil {
-		validFormats := map[types.ResponseFormat]bool{
-			types.ResponseFormatJson:       true,
-			types.ResponseFormatJsonSchema: true,
+		validFormats := map[completion.ResponseFormat]bool{
+			completion.ResponseFormatJson:       true,
+			completion.ResponseFormatJsonSchema: true,
 		}
 		if !validFormats[*config.ResponseFormat] {
 			return types.NewValidationError(
@@ -222,111 +225,7 @@ func ValidateCompletionOptions(config *types.CompletionOptions) error {
 		}
 
 		// If json_schema is specified, JSONSchema must be provided
-		if *config.ResponseFormat == types.ResponseFormatJsonSchema && config.JSONSchema == nil {
-			return types.NewValidationError(
-				"jsonSchema",
-				"must be provided when responseFormat is json_schema",
-				nil,
-			)
-		}
-	}
-
-	return nil
-}
-
-// ValidateModelConfig validates model configuration parameters (deprecated, use ValidateCompletionOptions)
-func ValidateModelConfig(config *types.ModelConfig) error {
-	if config == nil {
-		return nil // Config is optional
-	}
-
-	// Validate temperature
-	if config.Temperature != 0 {
-		if config.Temperature < MinTemperature || config.Temperature > MaxTemperature {
-			return types.NewValidationError(
-				"temperature",
-				fmt.Sprintf("must be between %.1f and %.1f", MinTemperature, MaxTemperature),
-				config.Temperature,
-			)
-		}
-	}
-
-	// Validate top_p
-	if config.TopP != 0 {
-		if config.TopP < MinTopP || config.TopP > MaxTopP {
-			return types.NewValidationError(
-				"topP",
-				fmt.Sprintf("must be between %.1f and %.1f", MinTopP, MaxTopP),
-				config.TopP,
-			)
-		}
-	}
-
-	// Validate max_tokens
-	if config.MaxTokens != 0 {
-		if config.MaxTokens < MinMaxTokens || config.MaxTokens > MaxMaxTokens {
-			return types.NewValidationError(
-				"maxTokens",
-				fmt.Sprintf("must be between %d and %d", MinMaxTokens, MaxMaxTokens),
-				config.MaxTokens,
-			)
-		}
-	}
-
-	// Validate presence_penalty
-	if config.PresencePenalty != 0 {
-		if config.PresencePenalty < MinPresencePenalty || config.PresencePenalty > MaxPresencePenalty {
-			return types.NewValidationError(
-				"presencePenalty",
-				fmt.Sprintf("must be between %.1f and %.1f", MinPresencePenalty, MaxPresencePenalty),
-				config.PresencePenalty,
-			)
-		}
-	}
-
-	// Validate frequency_penalty
-	if config.FrequencyPenalty != 0 {
-		if config.FrequencyPenalty < MinFrequencyPenalty || config.FrequencyPenalty > MaxFrequencyPenalty {
-			return types.NewValidationError(
-				"frequencyPenalty",
-				fmt.Sprintf("must be between %.1f and %.1f", MinFrequencyPenalty, MaxFrequencyPenalty),
-				config.FrequencyPenalty,
-			)
-		}
-	}
-
-	// Validate reasoning effort
-	if config.ReasoningEffort != "" {
-		validEfforts := map[types.ReasoningEffort]bool{
-			types.ReasoningEffortLow:    true,
-			types.ReasoningEffortMedium: true,
-			types.ReasoningEffortHigh:   true,
-		}
-		if !validEfforts[config.ReasoningEffort] {
-			return types.NewValidationError(
-				"reasoningEffort",
-				"must be one of: low, medium, high",
-				string(config.ReasoningEffort),
-			)
-		}
-	}
-
-	// Validate response format
-	if config.ResponseFormat != "" {
-		validFormats := map[types.ResponseFormat]bool{
-			types.ResponseFormatJson:       true,
-			types.ResponseFormatJsonSchema: true,
-		}
-		if !validFormats[config.ResponseFormat] {
-			return types.NewValidationError(
-				"responseFormat",
-				"must be one of: json, json_schema",
-				string(config.ResponseFormat),
-			)
-		}
-
-		// If json_schema is specified, JSONSchema must be provided
-		if config.ResponseFormat == types.ResponseFormatJsonSchema && config.JSONSchema == nil {
+		if *config.ResponseFormat == completion.ResponseFormatJsonSchema && config.JSONSchema == nil {
 			return types.NewValidationError(
 				"jsonSchema",
 				"must be provided when responseFormat is json_schema",
@@ -339,7 +238,7 @@ func ValidateModelConfig(config *types.ModelConfig) error {
 }
 
 // ValidateEmbeddingRequestWithDetails validates embedding request with detailed errors
-func ValidateEmbeddingRequestWithDetails(req *types.EmbeddingRequest) error {
+func ValidateEmbeddingRequestWithDetails(req *embedding.EmbeddingRequest) error {
 	if req == nil {
 		return types.NewValidationError("request", "cannot be nil", nil)
 	}
@@ -374,7 +273,7 @@ func ValidateEmbeddingRequestWithDetails(req *types.EmbeddingRequest) error {
 }
 
 // validateEmbeddingConfig validates embedding configuration
-func validateEmbeddingConfig(config *types.EmbeddingModelConfig) error {
+func validateEmbeddingConfig(config *embedding.EmbeddingModelConfig) error {
 	if config == nil {
 		return nil
 	}
@@ -407,7 +306,7 @@ func validateEmbeddingConfig(config *types.EmbeddingModelConfig) error {
 }
 
 // ValidateImageRequestWithDetails validates image request with detailed errors
-func ValidateImageRequestWithDetails(req *types.ImageRequest) error {
+func ValidateImageRequestWithDetails(req *image.ImageRequest) error {
 	if req == nil {
 		return types.NewValidationError("request", "cannot be nil", nil)
 	}
@@ -431,7 +330,7 @@ func ValidateImageRequestWithDetails(req *types.ImageRequest) error {
 }
 
 // validateImageConfig validates image configuration
-func validateImageConfig(config *types.ImageModelConfig) error {
+func validateImageConfig(config *image.ImageModelConfig) error {
 	if config == nil {
 		return nil
 	}

@@ -5,6 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/easymvp/easyllm/types"
+	"github.com/easymvp/easyllm/types/completion"
+	"github.com/easymvp/easyllm/types/embedding"
+	"github.com/easymvp/easyllm/types/image"
 	"strconv"
 	"sync"
 	"text/template"
@@ -92,7 +95,7 @@ func CreateTokenUsage(inputTokens, outputTokens, reasoningTokens int64, images, 
 }
 
 // ValidateModelRequest validates common model request fields
-func ValidateModelRequest(req *types.CompletionRequest) error {
+func ValidateModelRequest(req *completion.CompletionRequest) error {
 	if req == nil {
 		return errors.New("request cannot be nil")
 	}
@@ -103,7 +106,7 @@ func ValidateModelRequest(req *types.CompletionRequest) error {
 }
 
 // ValidateEmbeddingRequest validates embedding request fields
-func ValidateEmbeddingRequest(req *types.EmbeddingRequest) error {
+func ValidateEmbeddingRequest(req *embedding.EmbeddingRequest) error {
 	if req == nil {
 		return errors.New("request cannot be nil")
 	}
@@ -117,7 +120,7 @@ func ValidateEmbeddingRequest(req *types.EmbeddingRequest) error {
 }
 
 // ValidateImageRequest validates image request fields
-func ValidateImageRequest(req *types.ImageRequest) error {
+func ValidateImageRequest(req *image.ImageRequest) error {
 	if req == nil {
 		return errors.New("request cannot be nil")
 	}

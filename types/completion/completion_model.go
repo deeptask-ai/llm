@@ -1,96 +1,48 @@
-package types
+package completion
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
+	"github.com/easymvp/easyllm/types"
 )
 
 // CompletionModel defines the interface for text completion operations
 type CompletionModel interface {
-	BaseModel
-	// Stream generates streaming content from the model
-	Stream(ctx context.Context, req *CompletionRequest, tools []ModelTool) (StreamCompletionResponse, error)
+	types.BaseModel
+	// StreamComplete generates streaming content from the model
+	StreamComplete(ctx context.Context, req *CompletionRequest, tools []types.ModelTool) (StreamCompletionResponse, error)
 	// Complete generates complete content from the model
-	Complete(ctx context.Context, req *CompletionRequest, tools []ModelTool) (*CompletionResponse, error)
+	Complete(ctx context.Context, req *CompletionRequest, tools []types.ModelTool) (*CompletionResponse, error)
 }
+
+type ResponseFormat string
+
+const (
+	ResponseFormatJson       ResponseFormat = "json"
+	ResponseFormatJsonSchema ResponseFormat = "json_schema"
+)
+
+type ReasoningEffort string
+
+const (
+	ReasoningEffortLow    ReasoningEffort = "low"
+	ReasoningEffortMedium ReasoningEffort = "medium"
+	ReasoningEffortHigh   ReasoningEffort = "high"
+)
 
 type CompletionRequest struct {
 	Instructions string
 	Model        string
-	Messages     []*ModelMessage
+	Messages     []*types.ModelMessage
 	Options      []CompletionOption
 }
 
 // StreamModelResponse represents a stream of API chunks
-type StreamCompletionResponse <-chan StreamChunk
+type StreamCompletionResponse <-chan types.StreamChunk
 
 type CompletionResponse struct {
 	Output string `json:"output"`
-	Usage  *TokenUsage
+	Usage  *types.TokenUsage
 	Cost   *float64
-}
-
-// StreamChunkType defines the type of chunk in the API stream
-type StreamChunkType string
-
-const (
-	TextChunkType      StreamChunkType = "text"
-	ReasoningChunkType StreamChunkType = "reasoning"
-	UsageChunkType     StreamChunkType = "usage"
-)
-
-// StreamChunk is the interface for all types of chunks in the API stream
-type StreamChunk interface {
-	Type() StreamChunkType
-
-	String() string
-}
-
-// StreamTextChunk represents a text chunk in the API stream
-type StreamTextChunk struct {
-	// Text contains the actual text content
-	Text string `json:"text"`
-}
-
-// Type returns the type of the chunk
-func (c StreamTextChunk) Type() StreamChunkType {
-	return TextChunkType
-}
-func (c StreamTextChunk) String() string {
-	return c.Text
-}
-
-// StreamReasoningChunk represents a reasoning chunk in the API stream
-type StreamReasoningChunk struct {
-	// Reasoning contains the reasoning text
-	Reasoning string `json:"reasoning"`
-}
-
-// Type returns the type of the chunk
-func (c StreamReasoningChunk) Type() StreamChunkType {
-	return ReasoningChunkType
-}
-func (c StreamReasoningChunk) String() string {
-	return c.Reasoning
-}
-
-// StreamUsageChunk represents a outputExample information chunk in the API stream
-type StreamUsageChunk struct {
-	Usage *TokenUsage
-	Cost  *float64
-}
-
-// Type returns the type of the chunk
-func (c StreamUsageChunk) Type() StreamChunkType {
-	return UsageChunkType
-}
-func (c StreamUsageChunk) String() string {
-	jsonBytes, err := json.Marshal(c.Usage)
-	if err != nil {
-		return "usage: {}"
-	}
-	return fmt.Sprintf("usage: %s", string(jsonBytes))
 }
 
 // CompletionOption is a functional option for configuring completion requests
@@ -98,18 +50,21 @@ type CompletionOption func(*CompletionOptions)
 
 // CompletionOptions contains configuration options for completion requests
 type CompletionOptions struct {
-	Temperature      *float64
-	TopP             *float64
-	MaxTokens        *int
-	PresencePenalty  *float64
-	FrequencyPenalty *float64
-	Seed             *int64
-	ReasoningEffort  *ReasoningEffort
-	Stop             []string
-	ResponseFormat   *ResponseFormat
-	JSONSchema       any
-	WithCost         *bool
-	WithUsage        *bool
+	Temperature       *float64
+	TopP              *float64
+	MaxTokens         *int
+	PresencePenalty   *float64
+	FrequencyPenalty  *float64
+	Seed              *int64
+	ReasoningEffort   *ReasoningEffort
+	Stop              []string
+	ResponseFormat    *ResponseFormat
+	JSONSchema        any
+	WithCost          *bool
+	WithUsage         *bool
+	MaxOutputTokens   *int
+	ParallelToolCalls *bool
+	TopLogprobs       *int
 }
 
 // WithTemperature sets the temperature for sampling
@@ -193,6 +148,25 @@ func WithCost(enabled bool) CompletionOption {
 func WithUsage(enabled bool) CompletionOption {
 	return func(o *CompletionOptions) {
 		o.WithUsage = &enabled
+	}
+}
+
+// WithMaxOutputTokens sets the maximum number of output tokens to generate
+func WithMaxOutputTokens(maxTokens int) CompletionOption {
+	return func(o *CompletionOptions) {
+		o.MaxOutputTokens = &maxTokens
+	}
+}
+
+func WithParallelToolCalls(enabled bool) CompletionOption {
+	return func(o *CompletionOptions) {
+		o.ParallelToolCalls = &enabled
+	}
+}
+
+func WithTopLogprobs(topLogprobs int) CompletionOption {
+	return func(o *CompletionOptions) {
+		o.TopLogprobs = &topLogprobs
 	}
 }
 

@@ -40,7 +40,7 @@ func main() {
 		},
 	}
 
-	stream, err := model.Stream(ctx, req, nil)
+	stream, err := model.StreamComplete(ctx, req, nil)
 	if err != nil {
 		log.Fatalf("Stream failed: %v", err)
 	}

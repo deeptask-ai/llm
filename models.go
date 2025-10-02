@@ -11,34 +11,50 @@ import (
 	"github.com/easymvp/easyllm/internal/providers/openai"
 	"github.com/easymvp/easyllm/internal/providers/openrouter"
 	"github.com/easymvp/easyllm/types"
+	"github.com/easymvp/easyllm/types/completion"
+	"github.com/easymvp/easyllm/types/conversation"
+	"github.com/easymvp/easyllm/types/embedding"
+	"github.com/easymvp/easyllm/types/image"
 )
 
 // NewOpenAIModel creates a new OpenAI model that supports completion, embedding, and image generation
-func NewOpenAIModel(opts ...types.ModelOption) (types.CompletionModel, error) {
+func NewOpenAIModel(opts ...types.ModelOption) (completion.CompletionModel, error) {
+	return openai.NewOpenAIModel(opts...)
+}
+
+func NewOpenAIConversationModel(opts ...types.ModelOption) (conversation.ConversationModel, error) {
+	return openai.NewOpenAIModel(opts...)
+}
+
+func NewOpenAIEmbeddingModel(opts ...types.ModelOption) (embedding.EmbeddingModel, error) {
+	return openai.NewOpenAIModel(opts...)
+}
+
+func NewOpenAIImageModel(opts ...types.ModelOption) (image.ImageModel, error) {
 	return openai.NewOpenAIModel(opts...)
 }
 
 // NewAzureOpenAIModel creates a new Azure OpenAI model that supports completion, embedding, and image generation
-func NewAzureOpenAIModel(opts ...types.ModelOption) (types.CompletionModel, error) {
+func NewAzureOpenAIModel(opts ...types.ModelOption) (completion.CompletionModel, error) {
 	return azure.NewAzureOpenAIModel(opts...)
 }
 
 // NewClaudeModel creates a new Claude model that supports completion
-func NewClaudeModel(opts ...types.ModelOption) (types.CompletionModel, error) {
+func NewClaudeModel(opts ...types.ModelOption) (completion.CompletionModel, error) {
 	return claude.NewClaudeModel(opts...)
 }
 
 // NewDeepSeekModel creates a new DeepSeek model that supports completion
-func NewDeepSeekModel(opts ...types.ModelOption) (types.CompletionModel, error) {
+func NewDeepSeekModel(opts ...types.ModelOption) (completion.CompletionModel, error) {
 	return deepseek.NewDeepSeekModel(opts...)
 }
 
 // NewGeminiModel creates a new Gemini model that supports completion
-func NewGeminiModel(opts ...types.ModelOption) (types.CompletionModel, error) {
+func NewGeminiModel(opts ...types.ModelOption) (completion.CompletionModel, error) {
 	return gemini.NewGeminiModel(opts...)
 }
 
 // NewOpenRouterModel creates a new OpenRouter model that supports completion
-func NewOpenRouterModel(opts ...types.ModelOption) (types.CompletionModel, error) {
+func NewOpenRouterModel(opts ...types.ModelOption) (completion.CompletionModel, error) {
 	return openrouter.NewOpenRouterModel(opts...)
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/easymvp/easyllm/types/conversation"
 	"github.com/easymvp/easyllm/types/embedding"
 	"github.com/easymvp/easyllm/types/image"
+	"github.com/openai/openai-go/v3/shared"
 	"strconv"
 	"sync"
 
@@ -751,7 +752,7 @@ func ToChatCompletionMessage(msg *types.ModelMessage) (openai.ChatCompletionMess
 func ToResponseNewParams(model string, input string, opts *conversation.ResponseOptions) (responses.ResponseNewParams, error) {
 	params := responses.ResponseNewParams{
 		Input: responses.ResponseNewParamsInputUnion{OfString: openai.String(input)},
-		Model: openai.ChatModel(model),
+		Model: model,
 	}
 
 	if opts != nil {
@@ -764,9 +765,13 @@ func ToResponseNewParams(model string, input string, opts *conversation.Response
 		if opts.MaxOutputTokens != nil && *opts.MaxOutputTokens != 0 {
 			params.MaxOutputTokens = openai.Int(int64(*opts.MaxOutputTokens))
 		}
-		// Note: Reasoning and Text parameters are complex types that need proper SDK support
-		// They are currently not set to avoid type assertion issues
-		// TODO: Implement proper type conversion once SDK types are clarified
+
+		if opts.ReasoningSummary != nil {
+			params.Reasoning.Summary = shared.ReasoningSummary(*opts.ReasoningSummary)
+		}
+		if opts.ReasoningEffort != nil {
+			params.Reasoning.Effort = shared.ReasoningEffort(*opts.ReasoningEffort)
+		}
 		if opts.ParallelToolCalls != nil {
 			params.ParallelToolCalls = openai.Bool(*opts.ParallelToolCalls)
 		}

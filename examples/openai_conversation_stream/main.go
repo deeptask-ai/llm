@@ -35,6 +35,7 @@ func main() {
 		Input: "You are a helpful assistant.",
 		Options: []conversation.ResponseOption{
 			conversation.WithReasoningEffort(conversation.ReasoningEffortLow),
+			conversation.WithReasoningSummary("concise"),
 		},
 	}
 

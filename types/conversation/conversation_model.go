@@ -68,6 +68,7 @@ type ResponseOptions struct {
 	ParallelToolCalls  *bool
 	TopLogprobs        *int
 	ReasoningSummary   *string
+	Generate           *string
 	Store              *bool
 	PreviousResponseId *string
 }

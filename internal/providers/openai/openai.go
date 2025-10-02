@@ -274,7 +274,7 @@ func (p *OpenAIEmbeddingModel) GenerateEmbeddings(ctx context.Context, req *type
 	// Apply config if provided
 	if req.Config != nil {
 		if req.Config.Dimensions > 0 {
-			params.Dimensions = openai.Int(req.Config.Dimensions)
+			params.Dimensions = openai.Int(int64(req.Config.Dimensions))
 		}
 		if req.Config.EncodingFormat != "" {
 			switch req.Config.EncodingFormat {

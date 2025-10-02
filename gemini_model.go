@@ -8,20 +8,28 @@ type GeminiModel struct {
 	*OpenAICompletionModel
 }
 
-type GeminiModelConfig struct {
-	APIKey string
-}
+func NewGeminiModel(opts ...ModelOption) (*GeminiModel, error) {
+	config := applyOptions(opts)
 
-func NewGeminiModel(config GeminiModelConfig) (*GeminiModel, error) {
 	if config.APIKey == "" {
 		return nil, ErrAPIKeyEmpty
 	}
 
+	// Build request options list
+	requestOpts := []option.RequestOption{}
+
+	// Set base URL (use default if not provided)
+	baseURL := config.BaseURL
+	if baseURL == "" {
+		baseURL = "https://generativelanguage.googleapis.com/v1beta/openai/"
+	}
+	requestOpts = append(requestOpts, option.WithBaseURL(baseURL))
+
+	// Append any custom options
+	requestOpts = append(requestOpts, config.Options...)
+
 	// Create the completion model with Gemini's OpenAI-compatible API endpoint
-	completionModel, err := NewOpenAICompletionModel(
-		config.APIKey,
-		option.WithBaseURL("https://generativelanguage.googleapis.com/v1beta/openai/"),
-	)
+	completionModel, err := NewOpenAICompletionModel(config.APIKey, requestOpts...)
 	if err != nil {
 		return nil, err
 	}

@@ -35,20 +35,28 @@ type OpenRouterModel struct {
 	apiKey string
 }
 
-type OpenRouterModelConfig struct {
-	APIKey string
-}
+func NewOpenRouterModel(opts ...ModelOption) (*OpenRouterModel, error) {
+	config := applyOptions(opts)
 
-func NewOpenRouterModel(config OpenRouterModelConfig) (*OpenRouterModel, error) {
 	if config.APIKey == "" {
 		return nil, ErrAPIKeyEmpty
 	}
 
+	// Build request options list
+	requestOpts := []option.RequestOption{}
+
+	// Set base URL (use default if not provided)
+	baseURL := config.BaseURL
+	if baseURL == "" {
+		baseURL = "https://openrouter.ai/api/v1/"
+	}
+	requestOpts = append(requestOpts, option.WithBaseURL(baseURL))
+
+	// Append any custom options
+	requestOpts = append(requestOpts, config.Options...)
+
 	// Create the completion model with OpenRouter's API endpoint
-	completionModel, err := NewOpenAICompletionModel(
-		config.APIKey,
-		option.WithBaseURL("https://openrouter.ai/api/v1/"),
-	)
+	completionModel, err := NewOpenAICompletionModel(config.APIKey, requestOpts...)
 	if err != nil {
 		return nil, err
 	}

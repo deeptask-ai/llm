@@ -7,20 +7,17 @@ import (
 	"strconv"
 	"sync"
 	"text/template"
+
+	"github.com/easymvp/easyllm/internal/conversion"
 )
 
-// Standard error types for better error handling
+// Legacy errors - kept for backward compatibility
+// New code should use errors from errors.go
 var (
-	ErrAPIKeyEmpty         = errors.New("API key cannot be empty")
-	ErrBaseURLEmpty        = errors.New("base URL cannot be empty")
-	ErrAPIVersionEmpty     = errors.New("API version cannot be empty")
 	ErrNoInstructions      = errors.New("no instructions provided")
 	ErrNoCompletionChoices = errors.New("no completion choices returned")
 	ErrNoImageData         = errors.New("no image data returned")
 	ErrModelNotFound       = errors.New("model not found")
-	ErrInvalidRequest      = errors.New("invalid request")
-	ErrEmptyContent        = errors.New("content cannot be empty")
-	ErrInvalidModel        = errors.New("invalid model specified")
 )
 
 // Template cache for better performance
@@ -28,14 +25,6 @@ var (
 	templateCache = make(map[string]*template.Template)
 	templateMutex sync.RWMutex
 )
-
-// Capability errors for unsupported features
-func NewUnsupportedCapabilityError(provider, capability string) error {
-	if capability == "image generation" {
-		return fmt.Errorf("%s is not supported by %s models", capability, provider)
-	}
-	return fmt.Errorf("%s are not supported by %s models", capability, provider)
-}
 
 // CalculateCost calculates the cost based on token usage and model pricing information
 // This function is shared across all model implementations
@@ -84,18 +73,12 @@ func CalculateCost(modelInfo *ModelInfo, usage *TokenUsage) *float64 {
 }
 
 // CalculateImageCost calculates cost for image generation
+// Delegates to internal/conversion package for consistency
 func CalculateImageCost(modelInfo *ModelInfo, imageCount int) *float64 {
 	if modelInfo == nil {
 		return nil
 	}
-
-	imagePrice, err := strconv.ParseFloat(modelInfo.Pricing.Image, 64)
-	if err != nil {
-		return nil
-	}
-
-	totalCost := float64(imageCount) * imagePrice
-	return &totalCost
+	return conversion.CalculateImageCost(modelInfo.Pricing.Image, imageCount)
 }
 
 // CreateTokenUsage creates a standardized TokenUsage struct

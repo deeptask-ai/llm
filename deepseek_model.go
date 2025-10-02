@@ -8,20 +8,28 @@ type DeepSeekModel struct {
 	*OpenAICompletionModel
 }
 
-type DeepSeekModelConfig struct {
-	APIKey string
-}
+func NewDeepSeekModel(opts ...ModelOption) (*DeepSeekModel, error) {
+	config := applyOptions(opts)
 
-func NewDeepSeekModel(config DeepSeekModelConfig) (*DeepSeekModel, error) {
 	if config.APIKey == "" {
 		return nil, ErrAPIKeyEmpty
 	}
 
+	// Build request options list
+	requestOpts := []option.RequestOption{}
+
+	// Set base URL (use default if not provided)
+	baseURL := config.BaseURL
+	if baseURL == "" {
+		baseURL = "https://api.deepseek.com/"
+	}
+	requestOpts = append(requestOpts, option.WithBaseURL(baseURL))
+
+	// Append any custom options
+	requestOpts = append(requestOpts, config.Options...)
+
 	// Create the completion model with DeepSeek's API endpoint
-	completionModel, err := NewOpenAICompletionModel(
-		config.APIKey,
-		option.WithBaseURL("https://api.deepseek.com/"),
-	)
+	completionModel, err := NewOpenAICompletionModel(config.APIKey, requestOpts...)
 	if err != nil {
 		return nil, err
 	}

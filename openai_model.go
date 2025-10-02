@@ -98,36 +98,67 @@ func NewOpenAICompletionModel(apiKey string, opts ...option.RequestOption) (*Ope
 }
 
 func (p *OpenAICompletionModel) Stream(ctx context.Context, req *CompletionRequest, tools []ModelTool) (StreamCompletionResponse, error) {
-	params := ToChatCompletionParams(req.Model, req.Instructions, req.Messages, req.Config, tools)
+	params, err := ToChatCompletionParams(req.Model, req.Instructions, req.Messages, req.Config, tools)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create chat completion params: %w", err)
+	}
 	stream := p.client.Chat.Completions.NewStreaming(ctx, params)
-	chunkChan := make(chan StreamChunk, 1)
+	chunkChan := make(chan StreamChunk, 10) // Increased buffer to reduce blocking
+
 	go func() {
 		defer close(chunkChan)
 
 		// Use an accumulator to track the full content
 		acc := openai.ChatCompletionAccumulator{}
-		var fullOutput string
 
 		for stream.Next() {
+			// Check for context cancellation
+			select {
+			case <-ctx.Done():
+				// Context was canceled, send error and return
+				select {
+				case chunkChan <- StreamTextChunk{
+					Text: fmt.Sprintf("Stream canceled: %v", ctx.Err()),
+				}:
+				default:
+					// Channel full or closed, just return
+				}
+				return
+			default:
+				// Continue processing
+			}
+
 			chunk := stream.Current()
 			acc.AddChunk(chunk)
 
 			if len(chunk.Choices) > 0 {
 				if chunk.Choices[0].Delta.Content != "" {
 					text := chunk.Choices[0].Delta.Content
-					fullOutput += text
-					chunkChan <- StreamTextChunk{
+					select {
+					case chunkChan <- StreamTextChunk{
 						Text: text,
+					}:
+					case <-ctx.Done():
+						// Context canceled while sending
+						return
 					}
 				}
 			}
 		}
 
-		// Check for errors
+		// Check for errors from the stream
 		if err := stream.Err(); err != nil {
-			// Send an error content as a text chunk
-			chunkChan <- StreamTextChunk{
+			// Check if error is due to context cancellation
+			if ctx.Err() != nil {
+				return
+			}
+
+			select {
+			case chunkChan <- StreamTextChunk{
 				Text: fmt.Sprintf("Error from OpenAI API: %v", err),
+			}:
+			case <-ctx.Done():
+				return
 			}
 			return
 		}
@@ -152,9 +183,13 @@ func (p *OpenAICompletionModel) Stream(ctx context.Context, req *CompletionReque
 		}
 
 		// Send usage information at the end
-		chunkChan <- StreamUsageChunk{
+		select {
+		case chunkChan <- StreamUsageChunk{
 			Usage: usage,
 			Cost:  cost,
+		}:
+		case <-ctx.Done():
+			return
 		}
 	}()
 
@@ -162,7 +197,10 @@ func (p *OpenAICompletionModel) Stream(ctx context.Context, req *CompletionReque
 }
 
 func (p *OpenAICompletionModel) Complete(ctx context.Context, req *CompletionRequest, tools []ModelTool) (*CompletionResponse, error) {
-	params := ToChatCompletionParams(req.Model, req.Instructions, req.Messages, req.Config, tools)
+	params, err := ToChatCompletionParams(req.Model, req.Instructions, req.Messages, req.Config, tools)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create chat completion params: %w", err)
+	}
 	resp, err := p.client.Chat.Completions.New(ctx, params)
 	if err != nil {
 		return nil, fmt.Errorf("failed to complete chat: %w", err)
@@ -389,17 +427,23 @@ type OpenAIModel struct {
 	*OpenAIImageModel
 }
 
-type OpenAIModelConfig struct {
-	APIKey string
-}
+func NewOpenAIModel(opts ...ModelOption) (*OpenAIModel, error) {
+	config := applyOptions(opts)
 
-func NewOpenAIModel(config OpenAIModelConfig) (*OpenAIModel, error) {
 	if config.APIKey == "" {
 		return nil, ErrAPIKeyEmpty
 	}
 
+	// Build request options list
+	requestOpts := config.Options
+
+	// Set base URL if provided
+	if config.BaseURL != "" {
+		requestOpts = append([]option.RequestOption{option.WithBaseURL(config.BaseURL)}, requestOpts...)
+	}
+
 	// Create base model
-	base, err := newOpenAIBaseModel(config.APIKey)
+	base, err := newOpenAIBaseModel(config.APIKey, requestOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -426,7 +470,7 @@ func (m *OpenAIModel) ClearModelCache() {
 
 // Helper functions
 
-func ToChatCompletionParams(model string, instructions string, messages []*ModelMessage, config *ModelConfig, tools []ModelTool) openai.ChatCompletionNewParams {
+func ToChatCompletionParams(model string, instructions string, messages []*ModelMessage, config *ModelConfig, tools []ModelTool) (openai.ChatCompletionNewParams, error) {
 	openaiMessages := make([]openai.ChatCompletionMessageParamUnion, 0, len(messages)+1)
 
 	// Add system content if provided
@@ -436,7 +480,11 @@ func ToChatCompletionParams(model string, instructions string, messages []*Model
 
 	// Add the rest of the messages
 	for _, msg := range messages {
-		openaiMessages = append(openaiMessages, ToChatCompletionMessage(msg))
+		openaiMsg, err := ToChatCompletionMessage(msg)
+		if err != nil {
+			return openai.ChatCompletionNewParams{}, fmt.Errorf("failed to convert message: %w", err)
+		}
+		openaiMessages = append(openaiMessages, openaiMsg)
 	}
 
 	params := openai.ChatCompletionNewParams{
@@ -515,31 +563,36 @@ func ToChatCompletionParams(model string, instructions string, messages []*Model
 		}
 	}
 
-	return params
+	return params, nil
 }
 
-func ToChatCompletionMessage(msg *ModelMessage) openai.ChatCompletionMessageParamUnion {
-	if string(msg.Role) == string(openai.MessageRoleUser) {
-		return openai.UserMessage(msg.Content)
-	} else if string(msg.Role) == string(openai.MessageRoleAssistant) {
+func ToChatCompletionMessage(msg *ModelMessage) (openai.ChatCompletionMessageParamUnion, error) {
+	if msg == nil {
+		return openai.UserMessage(""), NewValidationError("message", "cannot be nil", nil)
+	}
+
+	switch msg.Role {
+	case MessageRoleUser:
+		return openai.UserMessage(msg.Content), nil
+
+	case MessageRoleAssistant:
 		if msg.ToolCall == nil {
-			return openai.AssistantMessage(msg.Content)
-		} else {
-			jsonBytes, err := json.Marshal(msg.ToolCall)
-			toolCallJSON := "{}"
-			if err == nil {
-				toolCallJSON = string(jsonBytes)
-			}
-			return openai.AssistantMessage("call tool: ```" + toolCallJSON + "```")
+			return openai.AssistantMessage(msg.Content), nil
 		}
-	} else if string(msg.Role) == "tool" {
 		jsonBytes, err := json.Marshal(msg.ToolCall)
-		toolCallJSON := "{}"
-		if err == nil {
-			toolCallJSON = string(jsonBytes)
+		if err != nil {
+			return openai.AssistantMessage(""), fmt.Errorf("failed to marshal tool call: %w", err)
 		}
-		return openai.UserMessage("call tool results: ```" + toolCallJSON + "```")
-	} else {
-		panic("unknown role")
+		return openai.AssistantMessage("call tool: ```" + string(jsonBytes) + "```"), nil
+
+	case MessageRoleTool:
+		jsonBytes, err := json.Marshal(msg.ToolCall)
+		if err != nil {
+			return openai.UserMessage(""), fmt.Errorf("failed to marshal tool call results: %w", err)
+		}
+		return openai.UserMessage("call tool results: ```" + string(jsonBytes) + "```"), nil
+
+	default:
+		return openai.UserMessage(""), NewValidationError("role", "unknown role", string(msg.Role))
 	}
 }

@@ -8,21 +8,30 @@ type ClaudeModel struct {
 	*OpenAICompletionModel
 }
 
-type ClaudeModelConfig struct {
-	APIKey string
-}
+func NewClaudeModel(opts ...ModelOption) (*ClaudeModel, error) {
+	config := applyOptions(opts)
 
-func NewClaudeModel(config ClaudeModelConfig) (*ClaudeModel, error) {
 	if config.APIKey == "" {
 		return nil, ErrAPIKeyEmpty
 	}
 
-	// Create the completion model with Claude's API endpoint and required headers
-	completionModel, err := NewOpenAICompletionModel(
-		config.APIKey,
-		option.WithBaseURL("https://api.anthropic.com/v1/"),
+	// Build request options list with defaults
+	requestOpts := []option.RequestOption{
 		option.WithHeader("anthropic-version", "2023-06-01"),
-	)
+	}
+
+	// Set base URL (use default if not provided)
+	baseURL := config.BaseURL
+	if baseURL == "" {
+		baseURL = "https://api.anthropic.com/v1/"
+	}
+	requestOpts = append(requestOpts, option.WithBaseURL(baseURL))
+
+	// Append any custom options
+	requestOpts = append(requestOpts, config.Options...)
+
+	// Create the completion model with Claude's API endpoint and required headers
+	completionModel, err := NewOpenAICompletionModel(config.APIKey, requestOpts...)
 	if err != nil {
 		return nil, err
 	}

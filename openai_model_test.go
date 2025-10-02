@@ -5,11 +5,9 @@ import (
 )
 
 func TestOpenAIModel_Name(t *testing.T) {
-	config := OpenAIModelConfig{
-		APIKey: "test-key",
-	}
-
-	model, err := NewOpenAIModel(config)
+	model, err := NewOpenAIModel(
+		WithAPIKey("test-key"),
+	)
 	if err != nil {
 		t.Fatalf("Failed to create OpenAI model: %v", err)
 	}
@@ -20,11 +18,9 @@ func TestOpenAIModel_Name(t *testing.T) {
 }
 
 func TestOpenAIModel_SupportedModels(t *testing.T) {
-	config := OpenAIModelConfig{
-		APIKey: "test-key",
-	}
-
-	model, err := NewOpenAIModel(config)
+	model, err := NewOpenAIModel(
+		WithAPIKey("test-key"),
+	)
 	if err != nil {
 		t.Fatalf("Failed to create OpenAI model: %v", err)
 	}
@@ -74,11 +70,7 @@ func TestOpenAIModel_SupportedModels(t *testing.T) {
 }
 
 func TestOpenAIModel_EmptyAPIKey(t *testing.T) {
-	config := OpenAIModelConfig{
-		APIKey: "",
-	}
-
-	_, err := NewOpenAIModel(config)
+	_, err := NewOpenAIModel()
 	if err == nil {
 		t.Error("Expected error for empty API key")
 	}
@@ -88,11 +80,9 @@ func TestOpenAIModel_EmptyAPIKey(t *testing.T) {
 }
 
 func TestOpenAIModel_ValidConfig(t *testing.T) {
-	config := OpenAIModelConfig{
-		APIKey: "test-key",
-	}
-
-	model, err := NewOpenAIModel(config)
+	model, err := NewOpenAIModel(
+		WithAPIKey("test-key"),
+	)
 	if err != nil {
 		t.Fatalf("Failed to create OpenAI model with valid config: %v", err)
 	}
@@ -102,23 +92,21 @@ func TestOpenAIModel_ValidConfig(t *testing.T) {
 	}
 
 	// Verify the API key is stored
-	if model.apiKey != "test-key" {
-		t.Errorf("Expected API key 'test-key', got '%s'", model.apiKey)
+	if model.OpenAICompletionModel.apiKey != "test-key" {
+		t.Errorf("Expected API key 'test-key', got '%s'", model.OpenAICompletionModel.apiKey)
 	}
 }
 
 func TestOpenAIModel_GetModelInfo(t *testing.T) {
-	config := OpenAIModelConfig{
-		APIKey: "test-key",
-	}
-
-	model, err := NewOpenAIModel(config)
+	model, err := NewOpenAIModel(
+		WithAPIKey("test-key"),
+	)
 	if err != nil {
 		t.Fatalf("Failed to create OpenAI model: %v", err)
 	}
 
 	// Test getting model info for a known model from the JSON data
-	modelInfo := model.getModelInfo("gpt-5")
+	modelInfo := model.OpenAICompletionModel.getModelInfo("gpt-5")
 	if modelInfo == nil {
 		t.Skip("Expected to find model info for gpt-5 - likely due to JSON pricing type mismatch")
 		return
@@ -130,7 +118,7 @@ func TestOpenAIModel_GetModelInfo(t *testing.T) {
 	}
 
 	// Test getting model info for a non-existent model
-	nonExistentModel := model.getModelInfo("non-existent-model")
+	nonExistentModel := model.OpenAICompletionModel.getModelInfo("non-existent-model")
 	if nonExistentModel != nil {
 		t.Error("Expected nil for non-existent model")
 	}
@@ -155,7 +143,10 @@ func TestToChatCompletionParams(t *testing.T) {
 		ResponseFormat:   ResponseFormatJson,
 	}
 
-	params := ToChatCompletionParams("gpt-4", "You are a helpful assistant", messages, config, nil)
+	params, err := ToChatCompletionParams("gpt-4", "You are a helpful assistant", messages, config, nil)
+	if err != nil {
+		t.Fatalf("Failed to create params: %v", err)
+	}
 
 	if params.Model != "gpt-4" {
 		t.Errorf("Expected model 'gpt-4', got '%s'", params.Model)
@@ -176,7 +167,10 @@ func TestToChatCompletionParams_WithoutConfig(t *testing.T) {
 		{Role: MessageRoleUser, Content: "Hello"},
 	}
 
-	params := ToChatCompletionParams("gpt-3.5-turbo", "", messages, nil, nil)
+	params, err := ToChatCompletionParams("gpt-3.5-turbo", "", messages, nil, nil)
+	if err != nil {
+		t.Fatalf("Failed to create params: %v", err)
+	}
 
 	if params.Model != "gpt-3.5-turbo" {
 		t.Errorf("Expected model 'gpt-3.5-turbo', got '%s'", params.Model)
@@ -193,12 +187,18 @@ func TestToChatCompletionParams_WithoutConfig(t *testing.T) {
 func TestToChatCompletionMessage(t *testing.T) {
 	// Test user message
 	userMsg := &ModelMessage{Role: MessageRoleUser, Content: "Hello"}
-	_ = ToChatCompletionMessage(userMsg)
+	_, err := ToChatCompletionMessage(userMsg)
+	if err != nil {
+		t.Errorf("Failed to convert user message: %v", err)
+	}
 	t.Logf("User message converted successfully")
 
 	// Test assistant message
 	assistantMsg := &ModelMessage{Role: MessageRoleAssistant, Content: "Hi there!"}
-	_ = ToChatCompletionMessage(assistantMsg)
+	_, err = ToChatCompletionMessage(assistantMsg)
+	if err != nil {
+		t.Errorf("Failed to convert assistant message: %v", err)
+	}
 	t.Logf("Assistant message converted successfully")
 
 	// Test assistant message with tool call
@@ -212,12 +212,15 @@ func TestToChatCompletionMessage(t *testing.T) {
 			Output: "test result",
 		},
 	}
-	_ = ToChatCompletionMessage(assistantWithToolMsg)
+	_, err = ToChatCompletionMessage(assistantWithToolMsg)
+	if err != nil {
+		t.Errorf("Failed to convert assistant message with tool call: %v", err)
+	}
 	t.Logf("Tool message converted successfully")
 
 	// Test tool message
 	toolMsg := &ModelMessage{
-		Role:    "tool",
+		Role:    MessageRoleTool,
 		Content: "tool result",
 		ToolCall: &ToolCall{
 			ID:     "call_123",
@@ -225,7 +228,10 @@ func TestToChatCompletionMessage(t *testing.T) {
 			Output: "test result",
 		},
 	}
-	_ = ToChatCompletionMessage(toolMsg)
+	_, err = ToChatCompletionMessage(toolMsg)
+	if err != nil {
+		t.Errorf("Failed to convert tool message: %v", err)
+	}
 	t.Logf("Tool result message converted successfully")
 }
 

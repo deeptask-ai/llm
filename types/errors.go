@@ -1,7 +1,7 @@
 // Copyright 2025 The Go A2A Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package easyllm
+package types
 
 import (
 	"errors"
@@ -24,6 +24,8 @@ var (
 
 	// ErrEmptyContent is returned when content is empty
 	ErrEmptyContent = errors.New("content cannot be empty")
+
+	ErrEmptyInstructions = errors.New("instructions cannot be empty")
 
 	// ErrInvalidModel is returned when model is invalid
 	ErrInvalidModel = errors.New("invalid model specified")

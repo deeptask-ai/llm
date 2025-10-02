@@ -1,7 +1,7 @@
 // Copyright 2025 The Go A2A Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package easyllm
+package types
 
 import (
 	"github.com/openai/openai-go/option"
@@ -54,7 +54,7 @@ func WithRequestOptions(opts ...option.RequestOption) ModelOption {
 }
 
 // applyOptions applies all options to create a ModelOptions struct
-func applyOptions(opts []ModelOption) *ModelOptions {
+func ApplyOptions(opts []ModelOption) *ModelOptions {
 	options := &ModelOptions{
 		Options: make([]option.RequestOption, 0),
 	}

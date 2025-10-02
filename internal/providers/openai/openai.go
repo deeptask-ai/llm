@@ -6,28 +6,29 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/easymvp/easyllm/internal/common"
+	"github.com/easymvp/easyllm/types"
 	"strconv"
 	"sync"
 
-	"github.com/easymvp/easyllm"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 )
 
-//go:embed ../../models/data/openai.json
+//go:embed openai.json
 var openaiModels []byte
 
 // OpenAIBaseModel provides base functionality for OpenAI models
 type OpenAIBaseModel struct {
 	client     openai.Client
 	apiKey     string
-	modelCache map[string]*easyllm.ModelInfo
+	modelCache map[string]*types.ModelInfo
 	cacheMutex sync.RWMutex
 }
 
-func newOpenAIBaseModel(apiKey string, opts ...option.RequestOption) (*OpenAIBaseModel, error) {
+func NewOpenAIBaseModel(apiKey string, opts ...option.RequestOption) (*OpenAIBaseModel, error) {
 	if apiKey == "" {
-		return nil, ErrAPIKeyEmpty
+		return nil, types.ErrAPIKeyEmpty
 	}
 
 	// Prepend API key option to any additional options
@@ -37,7 +38,7 @@ func newOpenAIBaseModel(apiKey string, opts ...option.RequestOption) (*OpenAIBas
 	return &OpenAIBaseModel{
 		client:     client,
 		apiKey:     apiKey,
-		modelCache: make(map[string]*ModelInfo),
+		modelCache: make(map[string]*types.ModelInfo),
 		cacheMutex: sync.RWMutex{},
 	}, nil
 }
@@ -46,8 +47,8 @@ func (b *OpenAIBaseModel) Name() string {
 	return "openai"
 }
 
-func (b *OpenAIBaseModel) SupportedModels() []*ModelInfo {
-	var models []*ModelInfo
+func (b *OpenAIBaseModel) SupportedModels() []*types.ModelInfo {
+	var models []*types.ModelInfo
 	if err := json.Unmarshal(openaiModels, &models); err != nil {
 		return nil
 	}
@@ -55,7 +56,7 @@ func (b *OpenAIBaseModel) SupportedModels() []*ModelInfo {
 }
 
 // getModelInfo returns the ModelInfo for a given model with caching for better performance
-func (b *OpenAIBaseModel) getModelInfo(modelID string) *ModelInfo {
+func (b *OpenAIBaseModel) getModelInfo(modelID string) *types.ModelInfo {
 	// Try to get from cache first (read lock)
 	b.cacheMutex.RLock()
 	if modelInfo, exists := b.modelCache[modelID]; exists {
@@ -81,7 +82,7 @@ func (b *OpenAIBaseModel) getModelInfo(modelID string) *ModelInfo {
 // ClearModelCache clears the model info cache
 func (b *OpenAIBaseModel) ClearModelCache() {
 	b.cacheMutex.Lock()
-	b.modelCache = make(map[string]*ModelInfo)
+	b.modelCache = make(map[string]*types.ModelInfo)
 	b.cacheMutex.Unlock()
 }
 
@@ -91,20 +92,20 @@ type OpenAICompletionModel struct {
 }
 
 func NewOpenAICompletionModel(apiKey string, opts ...option.RequestOption) (*OpenAICompletionModel, error) {
-	base, err := newOpenAIBaseModel(apiKey, opts...)
+	base, err := NewOpenAIBaseModel(apiKey, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return &OpenAICompletionModel{OpenAIBaseModel: base}, nil
 }
 
-func (p *OpenAICompletionModel) Stream(ctx context.Context, req *CompletionRequest, tools []ModelTool) (StreamCompletionResponse, error) {
+func (p *OpenAICompletionModel) Stream(ctx context.Context, req *types.CompletionRequest, tools []types.ModelTool) (types.StreamCompletionResponse, error) {
 	params, err := ToChatCompletionParams(req.Model, req.Instructions, req.Messages, req.Config, tools)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create chat completion params: %w", err)
 	}
 	stream := p.client.Chat.Completions.NewStreaming(ctx, params)
-	chunkChan := make(chan StreamChunk, 10) // Increased buffer to reduce blocking
+	chunkChan := make(chan types.StreamChunk, 10) // Increased buffer to reduce blocking
 
 	go func() {
 		defer close(chunkChan)
@@ -118,7 +119,7 @@ func (p *OpenAICompletionModel) Stream(ctx context.Context, req *CompletionReque
 			case <-ctx.Done():
 				// Context was canceled, send error and return
 				select {
-				case chunkChan <- StreamTextChunk{
+				case chunkChan <- types.StreamTextChunk{
 					Text: fmt.Sprintf("Stream canceled: %v", ctx.Err()),
 				}:
 				default:
@@ -136,7 +137,7 @@ func (p *OpenAICompletionModel) Stream(ctx context.Context, req *CompletionReque
 				if chunk.Choices[0].Delta.Content != "" {
 					text := chunk.Choices[0].Delta.Content
 					select {
-					case chunkChan <- StreamTextChunk{
+					case chunkChan <- types.StreamTextChunk{
 						Text: text,
 					}:
 					case <-ctx.Done():
@@ -155,7 +156,7 @@ func (p *OpenAICompletionModel) Stream(ctx context.Context, req *CompletionReque
 			}
 
 			select {
-			case chunkChan <- StreamTextChunk{
+			case chunkChan <- types.StreamTextChunk{
 				Text: fmt.Sprintf("Error from OpenAI API: %v", err),
 			}:
 			case <-ctx.Done():
@@ -165,7 +166,7 @@ func (p *OpenAICompletionModel) Stream(ctx context.Context, req *CompletionReque
 		}
 
 		// Create usage information
-		usage := &TokenUsage{
+		usage := &types.TokenUsage{
 			TotalInputTokens:      acc.ChatCompletion.Usage.PromptTokens,
 			TotalOutputTokens:     acc.ChatCompletion.Usage.CompletionTokens,
 			TotalReasoningTokens:  acc.ChatCompletion.Usage.CompletionTokensDetails.ReasoningTokens,
@@ -180,12 +181,12 @@ func (p *OpenAICompletionModel) Stream(ctx context.Context, req *CompletionReque
 		var cost *float64
 		if req.WithCost {
 			modelInfo := p.getModelInfo(req.Model)
-			cost = CalculateCost(modelInfo, usage)
+			cost = common.CalculateCost(modelInfo, usage)
 		}
 
 		// Send usage information at the end
 		select {
-		case chunkChan <- StreamUsageChunk{
+		case chunkChan <- types.StreamUsageChunk{
 			Usage: usage,
 			Cost:  cost,
 		}:
@@ -197,7 +198,7 @@ func (p *OpenAICompletionModel) Stream(ctx context.Context, req *CompletionReque
 	return chunkChan, nil
 }
 
-func (p *OpenAICompletionModel) Complete(ctx context.Context, req *CompletionRequest, tools []ModelTool) (*CompletionResponse, error) {
+func (p *OpenAICompletionModel) Complete(ctx context.Context, req *types.CompletionRequest, tools []types.ModelTool) (*types.CompletionResponse, error) {
 	params, err := ToChatCompletionParams(req.Model, req.Instructions, req.Messages, req.Config, tools)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create chat completion params: %w", err)
@@ -209,9 +210,9 @@ func (p *OpenAICompletionModel) Complete(ctx context.Context, req *CompletionReq
 
 	// Check if we have any choices in the response
 	if len(resp.Choices) == 0 {
-		return nil, ErrNoCompletionChoices
+		return nil, types.ErrEmptyContent
 	}
-	usage := &TokenUsage{
+	usage := &types.TokenUsage{
 		TotalInputTokens:      resp.Usage.PromptTokens,
 		TotalOutputTokens:     resp.Usage.CompletionTokens,
 		TotalReasoningTokens:  resp.Usage.CompletionTokensDetails.ReasoningTokens,
@@ -226,11 +227,11 @@ func (p *OpenAICompletionModel) Complete(ctx context.Context, req *CompletionReq
 	var cost *float64
 	if req.WithCost {
 		modelInfo := p.getModelInfo(req.Model)
-		cost = CalculateCost(modelInfo, usage)
+		cost = common.CalculateCost(modelInfo, usage)
 	}
 
 	output := resp.Choices[0].Message.Content
-	return &CompletionResponse{
+	return &types.CompletionResponse{
 		Output: output,
 		Usage:  usage,
 		Cost:   cost,
@@ -243,16 +244,16 @@ type OpenAIEmbeddingModel struct {
 }
 
 func NewOpenAIEmbeddingModel(apiKey string, opts ...option.RequestOption) (*OpenAIEmbeddingModel, error) {
-	base, err := newOpenAIBaseModel(apiKey, opts...)
+	base, err := NewOpenAIBaseModel(apiKey, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return &OpenAIEmbeddingModel{OpenAIBaseModel: base}, nil
 }
 
-func (p *OpenAIEmbeddingModel) GenerateEmbeddings(ctx context.Context, req *EmbeddingRequest) (*EmbeddingResponse, error) {
+func (p *OpenAIEmbeddingModel) GenerateEmbeddings(ctx context.Context, req *types.EmbeddingRequest) (*types.EmbeddingResponse, error) {
 	// Validate the request
-	if err := ValidateEmbeddingRequest(req); err != nil {
+	if err := common.ValidateEmbeddingRequest(req); err != nil {
 		return nil, err
 	}
 
@@ -277,9 +278,9 @@ func (p *OpenAIEmbeddingModel) GenerateEmbeddings(ctx context.Context, req *Embe
 		}
 		if req.Config.EncodingFormat != "" {
 			switch req.Config.EncodingFormat {
-			case EmbeddingEncodingFormatFloat:
+			case types.EmbeddingEncodingFormatFloat:
 				params.EncodingFormat = openai.EmbeddingNewParamsEncodingFormatFloat
-			case EmbeddingEncodingFormatBase64:
+			case types.EmbeddingEncodingFormatBase64:
 				params.EncodingFormat = openai.EmbeddingNewParamsEncodingFormatBase64
 			}
 		}
@@ -292,9 +293,9 @@ func (p *OpenAIEmbeddingModel) GenerateEmbeddings(ctx context.Context, req *Embe
 	}
 
 	// Convert OpenAI embeddings to our format
-	embeddings := make([]Embedding, len(resp.Data))
+	embeddings := make([]types.Embedding, len(resp.Data))
 	for i, data := range resp.Data {
-		embeddings[i] = Embedding{
+		embeddings[i] = types.Embedding{
 			Index:     int(data.Index),
 			Embedding: data.Embedding,
 			Object:    string(data.Object),
@@ -302,7 +303,7 @@ func (p *OpenAIEmbeddingModel) GenerateEmbeddings(ctx context.Context, req *Embe
 	}
 
 	// Create usage information
-	usage := &TokenUsage{
+	usage := &types.TokenUsage{
 		TotalInputTokens:  resp.Usage.PromptTokens,
 		TotalOutputTokens: 0, // Embeddings don't have output tokens
 		TotalRequests:     1,
@@ -312,10 +313,10 @@ func (p *OpenAIEmbeddingModel) GenerateEmbeddings(ctx context.Context, req *Embe
 	var cost *float64
 	modelInfo := p.getModelInfo(req.Model)
 	if modelInfo != nil {
-		cost = CalculateCost(modelInfo, usage)
+		cost = common.CalculateCost(modelInfo, usage)
 	}
 
-	return &EmbeddingResponse{
+	return &types.EmbeddingResponse{
 		Embeddings: embeddings,
 		Usage:      usage,
 		Cost:       cost,
@@ -328,16 +329,16 @@ type OpenAIImageModel struct {
 }
 
 func NewOpenAIImageModel(apiKey string, opts ...option.RequestOption) (*OpenAIImageModel, error) {
-	base, err := newOpenAIBaseModel(apiKey, opts...)
+	base, err := NewOpenAIBaseModel(apiKey, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return &OpenAIImageModel{OpenAIBaseModel: base}, nil
 }
 
-func (p *OpenAIImageModel) GenerateImage(ctx context.Context, req *ImageRequest) (*ImageResponse, error) {
+func (p *OpenAIImageModel) GenerateImage(ctx context.Context, req *types.ImageRequest) (*types.ImageResponse, error) {
 	if req.Instructions == "" {
-		return nil, ErrNoInstructions
+		return nil, types.ErrEmptyInstructions
 	}
 
 	// Set up parameters for image generation using instructions as prompt
@@ -386,7 +387,7 @@ func (p *OpenAIImageModel) GenerateImage(ctx context.Context, req *ImageRequest)
 	}
 
 	if len(image.Data) == 0 {
-		return nil, ErrNoImageData
+		return nil, types.ErrEmptyContent
 	}
 
 	// Decode base64 image data
@@ -396,7 +397,7 @@ func (p *OpenAIImageModel) GenerateImage(ctx context.Context, req *ImageRequest)
 	}
 
 	// Create usage information
-	usage := &TokenUsage{
+	usage := &types.TokenUsage{
 		TotalImages:   1,
 		TotalRequests: 1,
 	}
@@ -414,7 +415,7 @@ func (p *OpenAIImageModel) GenerateImage(ctx context.Context, req *ImageRequest)
 		}
 	}
 
-	return &ImageResponse{
+	return &types.ImageResponse{
 		Output: imageBytes,
 		Usage:  usage,
 		Cost:   cost,
@@ -428,11 +429,11 @@ type OpenAIModel struct {
 	*OpenAIImageModel
 }
 
-func NewOpenAIModel(opts ...ModelOption) (*OpenAIModel, error) {
-	config := applyOptions(opts)
+func NewOpenAIModel(opts ...types.ModelOption) (*OpenAIModel, error) {
+	config := types.ApplyOptions(opts)
 
 	if config.APIKey == "" {
-		return nil, ErrAPIKeyEmpty
+		return nil, types.ErrAPIKeyEmpty
 	}
 
 	// Build request options list
@@ -444,7 +445,7 @@ func NewOpenAIModel(opts ...ModelOption) (*OpenAIModel, error) {
 	}
 
 	// Create base model
-	base, err := newOpenAIBaseModel(config.APIKey, requestOpts...)
+	base, err := NewOpenAIBaseModel(config.APIKey, requestOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -461,7 +462,7 @@ func (m *OpenAIModel) Name() string {
 	return m.OpenAICompletionModel.Name()
 }
 
-func (m *OpenAIModel) SupportedModels() []*ModelInfo {
+func (m *OpenAIModel) SupportedModels() []*types.ModelInfo {
 	return m.OpenAICompletionModel.SupportedModels()
 }
 
@@ -471,7 +472,7 @@ func (m *OpenAIModel) ClearModelCache() {
 
 // Helper functions
 
-func ToChatCompletionParams(model string, instructions string, messages []*ModelMessage, config *ModelConfig, tools []ModelTool) (openai.ChatCompletionNewParams, error) {
+func ToChatCompletionParams(model string, instructions string, messages []*types.ModelMessage, config *types.ModelConfig, tools []types.ModelTool) (openai.ChatCompletionNewParams, error) {
 	openaiMessages := make([]openai.ChatCompletionMessageParamUnion, 0, len(messages)+1)
 
 	// Add system content if provided
@@ -547,7 +548,7 @@ func ToChatCompletionParams(model string, instructions string, messages []*Model
 			}
 		}
 		if config.ResponseFormat != "" {
-			if config.ResponseFormat == ResponseFormatJson {
+			if config.ResponseFormat == types.ResponseFormatJson {
 				params.ResponseFormat = openai.ChatCompletionNewParamsResponseFormatUnion{
 					OfJSONObject: &openai.ResponseFormatJSONObjectParam{},
 				}
@@ -567,16 +568,16 @@ func ToChatCompletionParams(model string, instructions string, messages []*Model
 	return params, nil
 }
 
-func ToChatCompletionMessage(msg *ModelMessage) (openai.ChatCompletionMessageParamUnion, error) {
+func ToChatCompletionMessage(msg *types.ModelMessage) (openai.ChatCompletionMessageParamUnion, error) {
 	if msg == nil {
-		return openai.UserMessage(""), NewValidationError("message", "cannot be nil", nil)
+		return openai.UserMessage(""), types.NewValidationError("message", "cannot be nil", nil)
 	}
 
 	switch msg.Role {
-	case MessageRoleUser:
+	case types.MessageRoleUser:
 		return openai.UserMessage(msg.Content), nil
 
-	case MessageRoleAssistant:
+	case types.MessageRoleAssistant:
 		if msg.ToolCall == nil {
 			return openai.AssistantMessage(msg.Content), nil
 		}
@@ -586,7 +587,7 @@ func ToChatCompletionMessage(msg *ModelMessage) (openai.ChatCompletionMessagePar
 		}
 		return openai.AssistantMessage("call tool: ```" + string(jsonBytes) + "```"), nil
 
-	case MessageRoleTool:
+	case types.MessageRoleTool:
 		jsonBytes, err := json.Marshal(msg.ToolCall)
 		if err != nil {
 			return openai.UserMessage(""), fmt.Errorf("failed to marshal tool call results: %w", err)
@@ -594,6 +595,6 @@ func ToChatCompletionMessage(msg *ModelMessage) (openai.ChatCompletionMessagePar
 		return openai.UserMessage("call tool results: ```" + string(jsonBytes) + "```"), nil
 
 	default:
-		return openai.UserMessage(""), NewValidationError("role", "unknown role", string(msg.Role))
+		return openai.UserMessage(""), types.NewValidationError("role", "unknown role", string(msg.Role))
 	}
 }

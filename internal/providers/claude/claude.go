@@ -1,18 +1,22 @@
-package easyllm
+package claude
 
 import (
+	_ "embed"
+	"encoding/json"
+	"github.com/easymvp/easyllm/internal/providers/openai"
+	"github.com/easymvp/easyllm/types"
 	"github.com/openai/openai-go/option"
 )
 
 type ClaudeModel struct {
-	*OpenAICompletionModel
+	*openai.OpenAICompletionModel
 }
 
-func NewClaudeModel(opts ...ModelOption) (*ClaudeModel, error) {
-	config := applyOptions(opts)
+func NewClaudeModel(opts ...types.ModelOption) (*ClaudeModel, error) {
+	config := types.ApplyOptions(opts)
 
 	if config.APIKey == "" {
-		return nil, ErrAPIKeyEmpty
+		return nil, types.ErrAPIKeyEmpty
 	}
 
 	// Build request options list with defaults
@@ -31,7 +35,7 @@ func NewClaudeModel(opts ...ModelOption) (*ClaudeModel, error) {
 	requestOpts = append(requestOpts, config.Options...)
 
 	// Create the completion model with Claude's API endpoint and required headers
-	completionModel, err := NewOpenAICompletionModel(config.APIKey, requestOpts...)
+	completionModel, err := openai.NewOpenAICompletionModel(config.APIKey, requestOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -41,51 +45,15 @@ func NewClaudeModel(opts ...ModelOption) (*ClaudeModel, error) {
 	}, nil
 }
 
-func (p *ClaudeModel) SupportedModels() []*ModelInfo {
-	return []*ModelInfo{
-		{
-			ID:   "opus-4.1",
-			Name: "Opus 4.1",
-			Pricing: ModelPricing{
-				Prompt:            "15",
-				Completion:        "75",
-				Request:           "0",
-				Image:             "0",
-				WebSearch:         "0",
-				InternalReasoning: "0",
-				InputCacheRead:    "1.5",
-				InputCacheWrite:   "18.75",
-			},
-		},
-		{
-			ID:   "sonnet-4.5",
-			Name: "Sonnet 4.5",
-			Pricing: ModelPricing{
-				Prompt:            "3",
-				Completion:        "15",
-				Request:           "0",
-				Image:             "0",
-				WebSearch:         "0",
-				InternalReasoning: "0",
-				InputCacheRead:    "0.3",
-				InputCacheWrite:   "3.75",
-			},
-		},
-		{
-			ID:   "haiku-3.5",
-			Name: "Haiku 3.5",
-			Pricing: ModelPricing{
-				Prompt:            "0.8",
-				Completion:        "4",
-				Request:           "0",
-				Image:             "0",
-				WebSearch:         "0",
-				InternalReasoning: "0",
-				InputCacheRead:    "0.08",
-				InputCacheWrite:   "1",
-			},
-		},
+//go:embed claude.json
+var claudeModels []byte
+
+func (p *ClaudeModel) SupportedModels() []*types.ModelInfo {
+	var models []*types.ModelInfo
+	if err := json.Unmarshal(claudeModels, &models); err != nil {
+		return nil
 	}
+	return models
 }
 
 func (p *ClaudeModel) Name() string {

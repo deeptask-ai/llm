@@ -1,8 +1,10 @@
-package easyllm
+package openrouter
 
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/easymvp/easyllm/internal/providers/openai"
+	"github.com/easymvp/easyllm/types"
 	"net/http"
 
 	"github.com/openai/openai-go/option"
@@ -30,16 +32,16 @@ type OpenRouterModelsResponse struct {
 }
 
 type OpenRouterModel struct {
-	*OpenAICompletionModel
+	*openai.OpenAICompletionModel
 	models map[string]OpenRouterModelInfo
 	apiKey string
 }
 
-func NewOpenRouterModel(opts ...ModelOption) (*OpenRouterModel, error) {
-	config := applyOptions(opts)
+func NewOpenRouterModel(opts ...types.ModelOption) (*OpenRouterModel, error) {
+	config := types.ApplyOptions(opts)
 
 	if config.APIKey == "" {
-		return nil, ErrAPIKeyEmpty
+		return nil, types.ErrAPIKeyEmpty
 	}
 
 	// Build request options list
@@ -56,7 +58,7 @@ func NewOpenRouterModel(opts ...ModelOption) (*OpenRouterModel, error) {
 	requestOpts = append(requestOpts, config.Options...)
 
 	// Create the completion model with OpenRouter's API endpoint
-	completionModel, err := NewOpenAICompletionModel(config.APIKey, requestOpts...)
+	completionModel, err := openai.NewOpenAICompletionModel(config.APIKey, requestOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -107,14 +109,14 @@ func (p *OpenRouterModel) loadModels() error {
 }
 
 // SupportedModels returns all available models from OpenRouter
-func (p *OpenRouterModel) SupportedModels() []*ModelInfo {
-	var models []*ModelInfo
+func (p *OpenRouterModel) SupportedModels() []*types.ModelInfo {
+	var models []*types.ModelInfo
 
 	for _, model := range p.models {
-		modelInfo := &ModelInfo{
+		modelInfo := &types.ModelInfo{
 			ID:   model.ID,
 			Name: model.Name,
-			Pricing: ModelPricing{
+			Pricing: types.ModelPricing{
 				Prompt:            model.Pricing.Prompt,
 				Completion:        model.Pricing.Completion,
 				Request:           model.Pricing.Request,
@@ -132,16 +134,16 @@ func (p *OpenRouterModel) SupportedModels() []*ModelInfo {
 }
 
 // getModelInfo returns the ModelInfo for a given model from OpenRouter's model list
-func (p *OpenRouterModel) getModelInfo(modelID string) *ModelInfo {
+func (p *OpenRouterModel) getModelInfo(modelID string) *types.ModelInfo {
 	openRouterModel, exists := p.models[modelID]
 	if !exists {
 		return nil
 	}
 
-	return &ModelInfo{
+	return &types.ModelInfo{
 		ID:   openRouterModel.ID,
 		Name: openRouterModel.Name,
-		Pricing: ModelPricing{
+		Pricing: types.ModelPricing{
 			Prompt:            openRouterModel.Pricing.Prompt,
 			Completion:        openRouterModel.Pricing.Completion,
 			Request:           openRouterModel.Pricing.Request,

@@ -1,24 +1,26 @@
-package easyllm
+package azure
 
 import (
+	"github.com/easymvp/easyllm/internal/providers/openai"
+	"github.com/easymvp/easyllm/types"
 	"github.com/openai/openai-go/option"
 )
 
 type AzureOpenAIModel struct {
-	*OpenAIModel
+	*openai.OpenAIModel
 }
 
-func NewAzureOpenAIModel(opts ...ModelOption) (*AzureOpenAIModel, error) {
-	config := applyOptions(opts)
+func NewAzureOpenAIModel(opts ...types.ModelOption) (*AzureOpenAIModel, error) {
+	config := types.ApplyOptions(opts)
 
 	if config.APIKey == "" {
-		return nil, ErrAPIKeyEmpty
+		return nil, types.ErrAPIKeyEmpty
 	}
 	if config.BaseURL == "" {
-		return nil, ErrBaseURLEmpty
+		return nil, types.ErrBaseURLEmpty
 	}
 	if config.APIVersion == "" {
-		return nil, ErrAPIVersionEmpty
+		return nil, types.ErrAPIVersionEmpty
 	}
 
 	// Build request options list
@@ -31,16 +33,16 @@ func NewAzureOpenAIModel(opts ...ModelOption) (*AzureOpenAIModel, error) {
 	requestOpts = append(requestOpts, config.Options...)
 
 	// Create base model with Azure OpenAI's API endpoint and required headers
-	base, err := newOpenAIBaseModel(config.APIKey, requestOpts...)
+	base, err := openai.NewOpenAIBaseModel(config.APIKey, requestOpts...)
 	if err != nil {
 		return nil, err
 	}
 
 	return &AzureOpenAIModel{
-		OpenAIModel: &OpenAIModel{
-			OpenAICompletionModel: &OpenAICompletionModel{OpenAIBaseModel: base},
-			OpenAIEmbeddingModel:  &OpenAIEmbeddingModel{OpenAIBaseModel: base},
-			OpenAIImageModel:      &OpenAIImageModel{OpenAIBaseModel: base},
+		OpenAIModel: &openai.OpenAIModel{
+			OpenAICompletionModel: &openai.OpenAICompletionModel{OpenAIBaseModel: base},
+			OpenAIEmbeddingModel:  &openai.OpenAIEmbeddingModel{OpenAIBaseModel: base},
+			OpenAIImageModel:      &openai.OpenAIImageModel{OpenAIBaseModel: base},
 		},
 	}, nil
 }

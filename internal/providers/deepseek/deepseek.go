@@ -1,18 +1,22 @@
-package easyllm
+package deepseek
 
 import (
+	_ "embed"
+	"encoding/json"
+	"github.com/easymvp/easyllm/internal/providers/openai"
+	"github.com/easymvp/easyllm/types"
 	"github.com/openai/openai-go/option"
 )
 
 type DeepSeekModel struct {
-	*OpenAICompletionModel
+	*openai.OpenAICompletionModel
 }
 
-func NewDeepSeekModel(opts ...ModelOption) (*DeepSeekModel, error) {
-	config := applyOptions(opts)
+func NewDeepSeekModel(opts ...types.ModelOption) (*DeepSeekModel, error) {
+	config := types.ApplyOptions(opts)
 
 	if config.APIKey == "" {
-		return nil, ErrAPIKeyEmpty
+		return nil, types.ErrAPIKeyEmpty
 	}
 
 	// Build request options list
@@ -29,7 +33,7 @@ func NewDeepSeekModel(opts ...ModelOption) (*DeepSeekModel, error) {
 	requestOpts = append(requestOpts, config.Options...)
 
 	// Create the completion model with DeepSeek's API endpoint
-	completionModel, err := NewOpenAICompletionModel(config.APIKey, requestOpts...)
+	completionModel, err := openai.NewOpenAICompletionModel(config.APIKey, requestOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -39,37 +43,15 @@ func NewDeepSeekModel(opts ...ModelOption) (*DeepSeekModel, error) {
 	}, nil
 }
 
-func (p *DeepSeekModel) SupportedModels() []*ModelInfo {
-	return []*ModelInfo{
-		{
-			ID:   "deepseek-chat",
-			Name: "DeepSeek Chat",
-			Pricing: ModelPricing{
-				Prompt:            "0.28",
-				Completion:        "0.42",
-				Request:           "0",
-				Image:             "0",
-				WebSearch:         "0",
-				InternalReasoning: "0",
-				InputCacheRead:    "0.028",
-				InputCacheWrite:   "0",
-			},
-		},
-		{
-			ID:   "deepseek-reasoner",
-			Name: "DeepSeek Reasoner",
-			Pricing: ModelPricing{
-				Prompt:            "0.28",
-				Completion:        "0.42",
-				Request:           "0",
-				Image:             "0",
-				WebSearch:         "0",
-				InternalReasoning: "0",
-				InputCacheRead:    "0.028",
-				InputCacheWrite:   "0",
-			},
-		},
+//go:embed deepseek.json
+var deepSeekModels []byte
+
+func (p *DeepSeekModel) SupportedModels() []*types.ModelInfo {
+	var models []*types.ModelInfo
+	if err := json.Unmarshal(deepSeekModels, &models); err != nil {
+		return nil
 	}
+	return models
 }
 
 func (p *DeepSeekModel) Name() string {

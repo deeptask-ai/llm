@@ -3,42 +3,63 @@
     "id": "opus-4.1",
     "name": "Opus 4.1",
     "pricing": {
-      "prompt": 15,
-      "completion": 75,
-      "request": 0,
-      "image": 0,
-      "webSearch": 0,
-      "internalReasoning": 0,
-      "inputCacheRead": 1.5,
-      "inputCacheWrite": 18.75
-    }
+      "prompt": "15",
+      "completion": "75",
+      "request": "0",
+      "image": "0",
+      "webSearch": "0",
+      "internalReasoning": "0",
+      "inputCacheRead": "1.5",
+      "inputCacheWrite": "18.75"
+    },
+    "reasoning": false,
+    "embedding": false,
+    "input": ["text"],
+    "output": ["text"],
+    "contextWindow": 200000,
+    "maxOutputTokens": 8192,
+    "updatedAt": "2025-02-10T00:00:00Z"
   },
   {
     "id": "sonnet-4.5",
     "name": "Sonnet 4.5",
     "pricing": {
-      "prompt": 3,
-      "completion": 15,
-      "request": 0,
-      "image": 0,
-      "webSearch": 0,
-      "internalReasoning": 0,
-      "inputCacheRead": 0.3,
-      "inputCacheWrite": 3.75
-    }
+      "prompt": "3",
+      "completion": "15",
+      "request": "0",
+      "image": "0",
+      "webSearch": "0",
+      "internalReasoning": "0",
+      "inputCacheRead": "0.3",
+      "inputCacheWrite": "3.75"
+    },
+    "reasoning": false,
+    "embedding": false,
+    "input": ["text"],
+    "output": ["text"],
+    "contextWindow": 200000,
+    "maxOutputTokens": 8192,
+    "updatedAt": "2025-02-10T00:00:00Z"
   },
   {
     "id": "haiku-3.5",
     "name": "Haiku 3.5",
     "pricing": {
-      "prompt": 0.8,
-      "completion": 4,
-      "request": 0,
-      "image": 0,
-      "webSearch": 0,
-      "internalReasoning": 0,
-      "inputCacheRead": 0.08,
-      "inputCacheWrite": 1
-    }
+      "prompt": "0.8",
+      "completion": "4",
+      "request": "0",
+      "image": "0",
+      "webSearch": "0",
+      "internalReasoning": "0",
+      "inputCacheRead": "0.08",
+      "inputCacheWrite": "1"
+    },
+    "reasoning": false,
+    "embedding": false,
+    "input": ["text"],
+    "output": ["text"],
+    "contextWindow": 200000,
+    "maxOutputTokens": 8192,
+    "updatedAt": "2025-02-10T00:00:00Z"
   }
 ]

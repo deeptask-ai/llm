@@ -113,7 +113,7 @@ func CreateTokenUsage(inputTokens, outputTokens, reasoningTokens int64, images, 
 }
 
 // ValidateModelRequest validates common model request fields
-func ValidateModelRequest(req *ModelRequest) error {
+func ValidateModelRequest(req *CompletionRequest) error {
 	if req == nil {
 		return errors.New("request cannot be nil")
 	}

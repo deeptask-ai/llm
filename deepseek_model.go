@@ -1,15 +1,11 @@
 package easyllm
 
 import (
-	"context"
-	_ "embed"
-	"encoding/json"
-	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 )
 
 type DeepSeekModel struct {
-	*OpenAIModel
+	*OpenAICompletionModel
 }
 
 type DeepSeekModelConfig struct {
@@ -21,43 +17,53 @@ func NewDeepSeekModel(config DeepSeekModelConfig) (*DeepSeekModel, error) {
 		return nil, ErrAPIKeyEmpty
 	}
 
-	// Create the client with DeepSeek's API endpoint
-	client := openai.NewClient(
+	// Create the completion model with DeepSeek's API endpoint
+	completionModel, err := NewOpenAICompletionModel(
+		config.APIKey,
 		option.WithBaseURL("https://api.deepseek.com/"),
-		option.WithAPIKey(config.APIKey),
 	)
-
-	openaiProvider := &OpenAIModel{
-		client: client,
-		apiKey: config.APIKey,
+	if err != nil {
+		return nil, err
 	}
 
-	provider := &DeepSeekModel{
-		OpenAIModel: openaiProvider,
-	}
-
-	return provider, nil
+	return &DeepSeekModel{
+		OpenAICompletionModel: completionModel,
+	}, nil
 }
 
-//go:embed data/deepseek.json
-var deepseekModels []byte
-
 func (p *DeepSeekModel) SupportedModels() []*ModelInfo {
-	var models []*ModelInfo
-	if err := json.Unmarshal(deepseekModels, &models); err != nil {
-		return nil
+	return []*ModelInfo{
+		{
+			ID:   "deepseek-chat",
+			Name: "DeepSeek Chat",
+			Pricing: ModelPricing{
+				Prompt:            "0.28",
+				Completion:        "0.42",
+				Request:           "0",
+				Image:             "0",
+				WebSearch:         "0",
+				InternalReasoning: "0",
+				InputCacheRead:    "0.028",
+				InputCacheWrite:   "0",
+			},
+		},
+		{
+			ID:   "deepseek-reasoner",
+			Name: "DeepSeek Reasoner",
+			Pricing: ModelPricing{
+				Prompt:            "0.28",
+				Completion:        "0.42",
+				Request:           "0",
+				Image:             "0",
+				WebSearch:         "0",
+				InternalReasoning: "0",
+				InputCacheRead:    "0.028",
+				InputCacheWrite:   "0",
+			},
+		},
 	}
-	return models
 }
 
 func (p *DeepSeekModel) Name() string {
 	return "deepseek"
-}
-
-func (p *DeepSeekModel) GenerateEmbeddings(ctx context.Context, req *EmbeddingRequest) (*EmbeddingResponse, error) {
-	return nil, NewUnsupportedCapabilityError("DeepSeek", "embeddings")
-}
-
-func (p *DeepSeekModel) GenerateImage(ctx context.Context, req *ImageRequest) (*ImageResponse, error) {
-	return nil, NewUnsupportedCapabilityError("DeepSeek", "image generation")
 }

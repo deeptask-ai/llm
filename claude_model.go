@@ -1,15 +1,11 @@
 package easyllm
 
 import (
-	"context"
-	_ "embed"
-	"encoding/json"
-	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 )
 
 type ClaudeModel struct {
-	*OpenAIModel
+	*OpenAICompletionModel
 }
 
 type ClaudeModelConfig struct {
@@ -21,44 +17,68 @@ func NewClaudeModel(config ClaudeModelConfig) (*ClaudeModel, error) {
 		return nil, ErrAPIKeyEmpty
 	}
 
-	// Create the client with Claude's API endpoint and required headers
-	client := openai.NewClient(
+	// Create the completion model with Claude's API endpoint and required headers
+	completionModel, err := NewOpenAICompletionModel(
+		config.APIKey,
 		option.WithBaseURL("https://api.anthropic.com/v1/"),
-		option.WithAPIKey(config.APIKey),
 		option.WithHeader("anthropic-version", "2023-06-01"),
 	)
-
-	openaiProvider := &OpenAIModel{
-		client: client,
-		apiKey: config.APIKey,
+	if err != nil {
+		return nil, err
 	}
 
-	provider := &ClaudeModel{
-		OpenAIModel: openaiProvider,
-	}
-
-	return provider, nil
+	return &ClaudeModel{
+		OpenAICompletionModel: completionModel,
+	}, nil
 }
 
-//go:embed data/claude.json
-var claudeModels []byte
-
 func (p *ClaudeModel) SupportedModels() []*ModelInfo {
-	var models []*ModelInfo
-	if err := json.Unmarshal(claudeModels, &models); err != nil {
-		return nil
+	return []*ModelInfo{
+		{
+			ID:   "opus-4.1",
+			Name: "Opus 4.1",
+			Pricing: ModelPricing{
+				Prompt:            "15",
+				Completion:        "75",
+				Request:           "0",
+				Image:             "0",
+				WebSearch:         "0",
+				InternalReasoning: "0",
+				InputCacheRead:    "1.5",
+				InputCacheWrite:   "18.75",
+			},
+		},
+		{
+			ID:   "sonnet-4.5",
+			Name: "Sonnet 4.5",
+			Pricing: ModelPricing{
+				Prompt:            "3",
+				Completion:        "15",
+				Request:           "0",
+				Image:             "0",
+				WebSearch:         "0",
+				InternalReasoning: "0",
+				InputCacheRead:    "0.3",
+				InputCacheWrite:   "3.75",
+			},
+		},
+		{
+			ID:   "haiku-3.5",
+			Name: "Haiku 3.5",
+			Pricing: ModelPricing{
+				Prompt:            "0.8",
+				Completion:        "4",
+				Request:           "0",
+				Image:             "0",
+				WebSearch:         "0",
+				InternalReasoning: "0",
+				InputCacheRead:    "0.08",
+				InputCacheWrite:   "1",
+			},
+		},
 	}
-	return models
 }
 
 func (p *ClaudeModel) Name() string {
 	return "claude"
-}
-
-func (p *ClaudeModel) GenerateEmbeddings(ctx context.Context, req *EmbeddingRequest) (*EmbeddingResponse, error) {
-	return nil, NewUnsupportedCapabilityError("Claude", "embeddings")
-}
-
-func (p *ClaudeModel) GenerateImage(ctx context.Context, req *ImageRequest) (*ImageResponse, error) {
-	return nil, NewUnsupportedCapabilityError("Claude", "image generation")
 }

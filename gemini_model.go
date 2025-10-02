@@ -1,15 +1,11 @@
 package easyllm
 
 import (
-	"context"
-	_ "embed"
-	"encoding/json"
-	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 )
 
 type GeminiModel struct {
-	*OpenAIModel
+	*OpenAICompletionModel
 }
 
 type GeminiModelConfig struct {
@@ -21,45 +17,111 @@ func NewGeminiModel(config GeminiModelConfig) (*GeminiModel, error) {
 		return nil, ErrAPIKeyEmpty
 	}
 
-	// Create the client with Gemini's OpenAI-compatible API endpoint
-	client := openai.NewClient(
+	// Create the completion model with Gemini's OpenAI-compatible API endpoint
+	completionModel, err := NewOpenAICompletionModel(
+		config.APIKey,
 		option.WithBaseURL("https://generativelanguage.googleapis.com/v1beta/openai/"),
-		option.WithAPIKey(config.APIKey),
 	)
-
-	openaiProvider := &OpenAIModel{
-		client: client,
-		apiKey: config.APIKey,
+	if err != nil {
+		return nil, err
 	}
 
-	provider := &GeminiModel{
-		OpenAIModel: openaiProvider,
-	}
-
-	return provider, nil
+	return &GeminiModel{
+		OpenAICompletionModel: completionModel,
+	}, nil
 }
 
-//go:embed data/gemini.json
-var geminiModels []byte
-
 func (p *GeminiModel) SupportedModels() []*ModelInfo {
-	var models []*ModelInfo
-	if err := json.Unmarshal(geminiModels, &models); err != nil {
-		return nil
+	return []*ModelInfo{
+		{
+			ID:   "gemini-2.0-flash-exp",
+			Name: "Gemini 2.0 Flash Experimental",
+			Pricing: ModelPricing{
+				Prompt:            "0.075",
+				Completion:        "0.3",
+				Request:           "0",
+				Image:             "0",
+				WebSearch:         "0",
+				InternalReasoning: "0",
+				InputCacheRead:    "0.0375",
+				InputCacheWrite:   "1.125",
+			},
+		},
+		{
+			ID:   "gemini-2.5-flash",
+			Name: "Gemini 2.5 Flash",
+			Pricing: ModelPricing{
+				Prompt:            "0.075",
+				Completion:        "0.3",
+				Request:           "0",
+				Image:             "0",
+				WebSearch:         "0",
+				InternalReasoning: "0",
+				InputCacheRead:    "0.0375",
+				InputCacheWrite:   "1.125",
+			},
+		},
+		{
+			ID:   "gemini-1.5-pro",
+			Name: "Gemini 1.5 Pro",
+			Pricing: ModelPricing{
+				Prompt:            "1.25",
+				Completion:        "5",
+				Request:           "0",
+				Image:             "0",
+				WebSearch:         "0",
+				InternalReasoning: "0",
+				InputCacheRead:    "0.625",
+				InputCacheWrite:   "18.75",
+			},
+		},
+		{
+			ID:   "gemini-1.5-flash",
+			Name: "Gemini 1.5 Flash",
+			Pricing: ModelPricing{
+				Prompt:            "0.075",
+				Completion:        "0.3",
+				Request:           "0",
+				Image:             "0",
+				WebSearch:         "0",
+				InternalReasoning: "0",
+				InputCacheRead:    "0.0375",
+				InputCacheWrite:   "1.125",
+			},
+		},
+		{
+			ID:   "gemini-1.5-flash-8b",
+			Name: "Gemini 1.5 Flash-8B",
+			Pricing: ModelPricing{
+				Prompt:            "0.0375",
+				Completion:        "0.15",
+				Request:           "0",
+				Image:             "0",
+				WebSearch:         "0",
+				InternalReasoning: "0",
+				InputCacheRead:    "0.01875",
+				InputCacheWrite:   "0.5625",
+			},
+		},
+		{
+			ID:   "gemini-exp-1206",
+			Name: "Gemini Experimental 1206",
+			Pricing: ModelPricing{
+				Prompt:            "0.075",
+				Completion:        "0.3",
+				Request:           "0",
+				Image:             "0",
+				WebSearch:         "0",
+				InternalReasoning: "0",
+				InputCacheRead:    "0.0375",
+				InputCacheWrite:   "1.125",
+			},
+		},
 	}
-	return models
 }
 
 func (p *GeminiModel) Name() string {
 	return "gemini"
-}
-
-func (p *GeminiModel) GenerateEmbeddings(ctx context.Context, req *EmbeddingRequest) (*EmbeddingResponse, error) {
-	return nil, NewUnsupportedCapabilityError("Gemini", "embeddings")
-}
-
-func (p *GeminiModel) GenerateImage(ctx context.Context, req *ImageRequest) (*ImageResponse, error) {
-	return nil, NewUnsupportedCapabilityError("Gemini", "image generation")
 }
 
 // Override getModelInfo to use Gemini-specific models

@@ -87,9 +87,9 @@ func (c StreamUsageChunk) String() string {
 }
 
 // StreamModelResponse represents a stream of API chunks
-type StreamModelResponse <-chan StreamChunk
+type StreamCompletionResponse <-chan StreamChunk
 
-type ModelResponse struct {
+type CompletionResponse struct {
 	Output string `json:"output"`
 	Usage  *TokenUsage
 	Cost   *float64

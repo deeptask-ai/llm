@@ -1,7 +1,6 @@
 package easyllm
 
 import (
-	"context"
 	"testing"
 )
 
@@ -54,67 +53,6 @@ func TestOpenRouterModel_LoadModelsError(t *testing.T) {
 		}
 	} else {
 		t.Logf("OpenRouter API allowed model listing with invalid key - this is acceptable")
-	}
-}
-
-func TestOpenRouterModel_GenerateEmbeddings_NotSupported(t *testing.T) {
-	// Skip this test as it requires a real API call to load models
-	t.Skip("Skipping test that requires real API call")
-
-	config := OpenRouterModelConfig{
-		APIKey: "test-key",
-	}
-
-	model, err := NewOpenRouterModel(config)
-	if err != nil {
-		t.Fatalf("Failed to create OpenRouter model: %v", err)
-	}
-
-	ctx := context.Background()
-	req := &EmbeddingRequest{
-		Model:    "test-model",
-		Contents: []string{"test text"},
-	}
-
-	response, err := model.GenerateEmbeddings(ctx, req)
-	if err == nil {
-		t.Error("Expected error for unsupported embeddings")
-	}
-	if response != nil {
-		t.Error("Expected nil response for unsupported embeddings")
-	}
-	if err.Error() != "embeddings are not supported by OpenRouter models" {
-		t.Errorf("Expected 'embeddings are not supported by OpenRouter models', got '%s'", err.Error())
-	}
-}
-
-func TestOpenRouterModel_GenerateImage_NotSupported(t *testing.T) {
-	// Skip this test as it requires a real API call to load models
-	t.Skip("Skipping test that requires real API call")
-
-	config := OpenRouterModelConfig{
-		APIKey: "test-key",
-	}
-
-	model, err := NewOpenRouterModel(config)
-	if err != nil {
-		t.Fatalf("Failed to create OpenRouter model: %v", err)
-	}
-
-	ctx := context.Background()
-	req := &ImageRequest{
-		Instructions: "test image prompt",
-	}
-
-	response, err := model.GenerateImage(ctx, req)
-	if err == nil {
-		t.Error("Expected error for unsupported image generation")
-	}
-	if response != nil {
-		t.Error("Expected nil response for unsupported image generation")
-	}
-	if err.Error() != "image generation is not supported by OpenRouter models" {
-		t.Errorf("Expected 'image generation is not supported by OpenRouter models', got '%s'", err.Error())
 	}
 }
 

@@ -13,45 +13,39 @@ import (
 	"github.com/openai/openai-go/option"
 )
 
-type OpenAIModel struct {
+//go:embed data/openai.json
+var openaiModels []byte
+
+// OpenAIBaseModel provides base functionality for OpenAI models
+type OpenAIBaseModel struct {
 	client     openai.Client
 	apiKey     string
 	modelCache map[string]*ModelInfo
 	cacheMutex sync.RWMutex
 }
 
-type OpenAIModelConfig struct {
-	APIKey string
-}
-
-func NewOpenAIModel(config OpenAIModelConfig) (*OpenAIModel, error) {
-	if config.APIKey == "" {
+func newOpenAIBaseModel(apiKey string, opts ...option.RequestOption) (*OpenAIBaseModel, error) {
+	if apiKey == "" {
 		return nil, ErrAPIKeyEmpty
 	}
 
-	// Create the client with API key
-	client := openai.NewClient(
-		option.WithAPIKey(config.APIKey),
-	)
+	// Prepend API key option to any additional options
+	allOpts := append([]option.RequestOption{option.WithAPIKey(apiKey)}, opts...)
+	client := openai.NewClient(allOpts...)
 
-	provider := &OpenAIModel{
+	return &OpenAIBaseModel{
 		client:     client,
-		apiKey:     config.APIKey,
+		apiKey:     apiKey,
 		modelCache: make(map[string]*ModelInfo),
 		cacheMutex: sync.RWMutex{},
-	}
-
-	return provider, nil
+	}, nil
 }
 
-func (p *OpenAIModel) Name() string {
+func (b *OpenAIBaseModel) Name() string {
 	return "openai"
 }
 
-//go:embed data/openai.json
-var openaiModels []byte
-
-func (p *OpenAIModel) SupportedModels() []*ModelInfo {
+func (b *OpenAIBaseModel) SupportedModels() []*ModelInfo {
 	var models []*ModelInfo
 	if err := json.Unmarshal(openaiModels, &models); err != nil {
 		return nil
@@ -59,7 +53,51 @@ func (p *OpenAIModel) SupportedModels() []*ModelInfo {
 	return models
 }
 
-func (p *OpenAIModel) GenerateContentStream(ctx context.Context, req *ModelRequest, tools []ModelTool) (StreamModelResponse, error) {
+// getModelInfo returns the ModelInfo for a given model with caching for better performance
+func (b *OpenAIBaseModel) getModelInfo(modelID string) *ModelInfo {
+	// Try to get from cache first (read lock)
+	b.cacheMutex.RLock()
+	if modelInfo, exists := b.modelCache[modelID]; exists {
+		b.cacheMutex.RUnlock()
+		return modelInfo
+	}
+	b.cacheMutex.RUnlock()
+
+	// Not in cache, search through supported models
+	models := b.SupportedModels()
+	for _, model := range models {
+		if model.ID == modelID {
+			// Cache the result (write lock)
+			b.cacheMutex.Lock()
+			b.modelCache[modelID] = model
+			b.cacheMutex.Unlock()
+			return model
+		}
+	}
+	return nil
+}
+
+// ClearModelCache clears the model info cache
+func (b *OpenAIBaseModel) ClearModelCache() {
+	b.cacheMutex.Lock()
+	b.modelCache = make(map[string]*ModelInfo)
+	b.cacheMutex.Unlock()
+}
+
+// OpenAICompletionModel implements CompletionModel interface
+type OpenAICompletionModel struct {
+	*OpenAIBaseModel
+}
+
+func NewOpenAICompletionModel(apiKey string, opts ...option.RequestOption) (*OpenAICompletionModel, error) {
+	base, err := newOpenAIBaseModel(apiKey, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &OpenAICompletionModel{OpenAIBaseModel: base}, nil
+}
+
+func (p *OpenAICompletionModel) Stream(ctx context.Context, req *CompletionRequest, tools []ModelTool) (StreamCompletionResponse, error) {
 	params := ToChatCompletionParams(req.Model, req.Instructions, req.Messages, req.Config, tools)
 	stream := p.client.Chat.Completions.NewStreaming(ctx, params)
 	chunkChan := make(chan StreamChunk, 1)
@@ -108,7 +146,7 @@ func (p *OpenAIModel) GenerateContentStream(ctx context.Context, req *ModelReque
 
 		// Calculate cost if requested
 		var cost *float64
-		if req.Cost {
+		if req.WithCost {
 			modelInfo := p.getModelInfo(req.Model)
 			cost = CalculateCost(modelInfo, usage)
 		}
@@ -123,7 +161,7 @@ func (p *OpenAIModel) GenerateContentStream(ctx context.Context, req *ModelReque
 	return chunkChan, nil
 }
 
-func (p *OpenAIModel) GenerateContent(ctx context.Context, req *ModelRequest, tools []ModelTool) (*ModelResponse, error) {
+func (p *OpenAICompletionModel) Complete(ctx context.Context, req *CompletionRequest, tools []ModelTool) (*CompletionResponse, error) {
 	params := ToChatCompletionParams(req.Model, req.Instructions, req.Messages, req.Config, tools)
 	resp, err := p.client.Chat.Completions.New(ctx, params)
 	if err != nil {
@@ -147,20 +185,33 @@ func (p *OpenAIModel) GenerateContent(ctx context.Context, req *ModelRequest, to
 
 	// Calculate cost if requested
 	var cost *float64
-	if req.Cost {
+	if req.WithCost {
 		modelInfo := p.getModelInfo(req.Model)
 		cost = CalculateCost(modelInfo, usage)
 	}
 
 	output := resp.Choices[0].Message.Content
-	return &ModelResponse{
+	return &CompletionResponse{
 		Output: output,
 		Usage:  usage,
 		Cost:   cost,
 	}, nil
 }
 
-func (p *OpenAIModel) GenerateEmbeddings(ctx context.Context, req *EmbeddingRequest) (*EmbeddingResponse, error) {
+// OpenAIEmbeddingModel implements EmbeddingModel interface
+type OpenAIEmbeddingModel struct {
+	*OpenAIBaseModel
+}
+
+func NewOpenAIEmbeddingModel(apiKey string, opts ...option.RequestOption) (*OpenAIEmbeddingModel, error) {
+	base, err := newOpenAIBaseModel(apiKey, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &OpenAIEmbeddingModel{OpenAIBaseModel: base}, nil
+}
+
+func (p *OpenAIEmbeddingModel) GenerateEmbeddings(ctx context.Context, req *EmbeddingRequest) (*EmbeddingResponse, error) {
 	// Validate the request
 	if err := ValidateEmbeddingRequest(req); err != nil {
 		return nil, err
@@ -232,7 +283,20 @@ func (p *OpenAIModel) GenerateEmbeddings(ctx context.Context, req *EmbeddingRequ
 	}, nil
 }
 
-func (p *OpenAIModel) GenerateImage(ctx context.Context, req *ImageRequest) (*ImageResponse, error) {
+// OpenAIImageModel implements ImageModel interface
+type OpenAIImageModel struct {
+	*OpenAIBaseModel
+}
+
+func NewOpenAIImageModel(apiKey string, opts ...option.RequestOption) (*OpenAIImageModel, error) {
+	base, err := newOpenAIBaseModel(apiKey, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &OpenAIImageModel{OpenAIBaseModel: base}, nil
+}
+
+func (p *OpenAIImageModel) GenerateImage(ctx context.Context, req *ImageRequest) (*ImageResponse, error) {
 	if req.Instructions == "" {
 		return nil, ErrNoInstructions
 	}
@@ -317,6 +381,50 @@ func (p *OpenAIModel) GenerateImage(ctx context.Context, req *ImageRequest) (*Im
 		Cost:   cost,
 	}, nil
 }
+
+// OpenAIModel is a composite model that implements all OpenAI capabilities
+type OpenAIModel struct {
+	*OpenAICompletionModel
+	*OpenAIEmbeddingModel
+	*OpenAIImageModel
+}
+
+type OpenAIModelConfig struct {
+	APIKey string
+}
+
+func NewOpenAIModel(config OpenAIModelConfig) (*OpenAIModel, error) {
+	if config.APIKey == "" {
+		return nil, ErrAPIKeyEmpty
+	}
+
+	// Create base model
+	base, err := newOpenAIBaseModel(config.APIKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return &OpenAIModel{
+		OpenAICompletionModel: &OpenAICompletionModel{OpenAIBaseModel: base},
+		OpenAIEmbeddingModel:  &OpenAIEmbeddingModel{OpenAIBaseModel: base},
+		OpenAIImageModel:      &OpenAIImageModel{OpenAIBaseModel: base},
+	}, nil
+}
+
+// Override base methods to avoid ambiguity
+func (m *OpenAIModel) Name() string {
+	return m.OpenAICompletionModel.Name()
+}
+
+func (m *OpenAIModel) SupportedModels() []*ModelInfo {
+	return m.OpenAICompletionModel.SupportedModels()
+}
+
+func (m *OpenAIModel) ClearModelCache() {
+	m.OpenAICompletionModel.ClearModelCache()
+}
+
+// Helper functions
 
 func ToChatCompletionParams(model string, instructions string, messages []*ModelMessage, config *ModelConfig, tools []ModelTool) openai.ChatCompletionNewParams {
 	openaiMessages := make([]openai.ChatCompletionMessageParamUnion, 0, len(messages)+1)
@@ -434,35 +542,4 @@ func ToChatCompletionMessage(msg *ModelMessage) openai.ChatCompletionMessagePara
 	} else {
 		panic("unknown role")
 	}
-}
-
-// getModelInfo returns the ModelInfo for a given model with caching for better performance
-func (p *OpenAIModel) getModelInfo(modelID string) *ModelInfo {
-	// Try to get from cache first (read lock)
-	p.cacheMutex.RLock()
-	if modelInfo, exists := p.modelCache[modelID]; exists {
-		p.cacheMutex.RUnlock()
-		return modelInfo
-	}
-	p.cacheMutex.RUnlock()
-
-	// Not in cache, search through supported models
-	models := p.SupportedModels()
-	for _, model := range models {
-		if model.ID == modelID {
-			// Cache the result (write lock)
-			p.cacheMutex.Lock()
-			p.modelCache[modelID] = model
-			p.cacheMutex.Unlock()
-			return model
-		}
-	}
-	return nil
-}
-
-// ClearModelCache clears the model info cache
-func (p *OpenAIModel) ClearModelCache() {
-	p.cacheMutex.Lock()
-	p.modelCache = make(map[string]*ModelInfo)
-	p.cacheMutex.Unlock()
 }

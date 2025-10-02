@@ -1,86 +1,254 @@
 [
   {
-    "id": "gemini-2.0-flash-exp",
-    "name": "Gemini 2.0 Flash Experimental",
+    "id": "gemini-2.5-pro",
+    "name": "Gemini 2.5 Pro",
     "pricing": {
-      "prompt": 0.075,
-      "completion": 0.3,
-      "request": 0,
-      "image": 0,
-      "webSearch": 0,
-      "internalReasoning": 0,
-      "inputCacheRead": 0.0375,
-      "inputCacheWrite": 1.125
-    }
+      "prompt": "1.25",
+      "completion": "10",
+      "request": "0",
+      "image": "0",
+      "webSearch": "35",
+      "internalReasoning": "0",
+      "inputCacheRead": "0.31",
+      "inputCacheWrite": "0"
+    },
+    "reasoning": false,
+    "embedding": false,
+    "input": ["text", "image", "video", "audio"],
+    "output": ["text"],
+    "contextWindow": 2000000,
+    "maxOutputTokens": 8192,
+    "updatedAt": "2025-02-10T00:00:00Z"
   },
   {
     "id": "gemini-2.5-flash",
     "name": "Gemini 2.5 Flash",
     "pricing": {
-      "prompt": 0.075,
-      "completion": 0.3,
-      "request": 0,
-      "image": 0,
-      "webSearch": 0,
-      "internalReasoning": 0,
-      "inputCacheRead": 0.0375,
-      "inputCacheWrite": 1.125
-    }
+      "prompt": "0.3",
+      "completion": "2.5",
+      "request": "0",
+      "image": "0",
+      "webSearch": "35",
+      "internalReasoning": "2.5",
+      "inputCacheRead": "0.075",
+      "inputCacheWrite": "0"
+    },
+    "reasoning": true,
+    "embedding": false,
+    "input": ["text", "image", "video", "audio"],
+    "output": ["text"],
+    "contextWindow": 1000000,
+    "maxOutputTokens": 8192,
+    "updatedAt": "2025-02-10T00:00:00Z"
+  },
+  {
+    "id": "gemini-2.5-flash-preview",
+    "name": "Gemini 2.5 Flash Preview",
+    "pricing": {
+      "prompt": "0.3",
+      "completion": "2.5",
+      "request": "0",
+      "image": "0",
+      "webSearch": "35",
+      "internalReasoning": "2.5",
+      "inputCacheRead": "0.075",
+      "inputCacheWrite": "0"
+    },
+    "reasoning": true,
+    "embedding": false,
+    "input": ["text", "image", "video", "audio"],
+    "output": ["text"],
+    "contextWindow": 1000000,
+    "maxOutputTokens": 8192,
+    "updatedAt": "2025-02-10T00:00:00Z"
+  },
+  {
+    "id": "gemini-2.5-flash-lite",
+    "name": "Gemini 2.5 Flash-Lite",
+    "pricing": {
+      "prompt": "0.1",
+      "completion": "0.4",
+      "request": "0",
+      "image": "0",
+      "webSearch": "35",
+      "internalReasoning": "0",
+      "inputCacheRead": "0.025",
+      "inputCacheWrite": "0"
+    },
+    "reasoning": false,
+    "embedding": false,
+    "input": ["text", "image", "video", "audio"],
+    "output": ["text"],
+    "contextWindow": 1000000,
+    "maxOutputTokens": 8192,
+    "updatedAt": "2025-02-10T00:00:00Z"
+  },
+  {
+    "id": "gemini-2.5-flash-lite-preview",
+    "name": "Gemini 2.5 Flash-Lite Preview",
+    "pricing": {
+      "prompt": "0.1",
+      "completion": "0.4",
+      "request": "0",
+      "image": "0",
+      "webSearch": "35",
+      "internalReasoning": "0",
+      "inputCacheRead": "0.025",
+      "inputCacheWrite": "0"
+    },
+    "reasoning": false,
+    "embedding": false,
+    "input": ["text", "image", "video", "audio"],
+    "output": ["text"],
+    "contextWindow": 1000000,
+    "maxOutputTokens": 8192,
+    "updatedAt": "2025-02-10T00:00:00Z"
+  },
+  {
+    "id": "gemini-2.0-flash",
+    "name": "Gemini 2.0 Flash",
+    "pricing": {
+      "prompt": "0.1",
+      "completion": "0.4",
+      "request": "0",
+      "image": "0.039",
+      "webSearch": "35",
+      "internalReasoning": "0",
+      "inputCacheRead": "0.025",
+      "inputCacheWrite": "0"
+    },
+    "reasoning": false,
+    "embedding": false,
+    "input": ["text", "image", "video", "audio"],
+    "output": ["text", "image"],
+    "contextWindow": 1000000,
+    "maxOutputTokens": 8192,
+    "updatedAt": "2025-02-10T00:00:00Z"
+  },
+  {
+    "id": "gemini-2.0-flash-lite",
+    "name": "Gemini 2.0 Flash-Lite",
+    "pricing": {
+      "prompt": "0.075",
+      "completion": "0.3",
+      "request": "0",
+      "image": "0",
+      "webSearch": "0",
+      "internalReasoning": "0",
+      "inputCacheRead": "0",
+      "inputCacheWrite": "0"
+    },
+    "reasoning": false,
+    "embedding": false,
+    "input": ["text", "image", "video", "audio"],
+    "output": ["text"],
+    "contextWindow": 1000000,
+    "maxOutputTokens": 8192,
+    "updatedAt": "2025-02-10T00:00:00Z"
   },
   {
     "id": "gemini-1.5-pro",
     "name": "Gemini 1.5 Pro",
     "pricing": {
-      "prompt": 1.25,
-      "completion": 5,
-      "request": 0,
-      "image": 0,
-      "webSearch": 0,
-      "internalReasoning": 0,
-      "inputCacheRead": 0.625,
-      "inputCacheWrite": 18.75
-    }
+      "prompt": "1.25",
+      "completion": "5",
+      "request": "0",
+      "image": "0",
+      "webSearch": "35",
+      "internalReasoning": "0",
+      "inputCacheRead": "0.3125",
+      "inputCacheWrite": "0"
+    },
+    "reasoning": false,
+    "embedding": false,
+    "input": ["text", "image", "video", "audio"],
+    "output": ["text"],
+    "contextWindow": 2000000,
+    "maxOutputTokens": 8192,
+    "updatedAt": "2025-02-10T00:00:00Z"
   },
   {
     "id": "gemini-1.5-flash",
     "name": "Gemini 1.5 Flash",
     "pricing": {
-      "prompt": 0.075,
-      "completion": 0.3,
-      "request": 0,
-      "image": 0,
-      "webSearch": 0,
-      "internalReasoning": 0,
-      "inputCacheRead": 0.0375,
-      "inputCacheWrite": 1.125
-    }
+      "prompt": "0.075",
+      "completion": "0.3",
+      "request": "0",
+      "image": "0",
+      "webSearch": "35",
+      "internalReasoning": "0",
+      "inputCacheRead": "0.01875",
+      "inputCacheWrite": "0"
+    },
+    "reasoning": false,
+    "embedding": false,
+    "input": ["text", "image", "video", "audio"],
+    "output": ["text"],
+    "contextWindow": 1000000,
+    "maxOutputTokens": 8192,
+    "updatedAt": "2025-02-10T00:00:00Z"
   },
   {
     "id": "gemini-1.5-flash-8b",
     "name": "Gemini 1.5 Flash-8B",
     "pricing": {
-      "prompt": 0.0375,
-      "completion": 0.15,
-      "request": 0,
-      "image": 0,
-      "webSearch": 0,
-      "internalReasoning": 0,
-      "inputCacheRead": 0.01875,
-      "inputCacheWrite": 0.5625
-    }
+      "prompt": "0.0375",
+      "completion": "0.15",
+      "request": "0",
+      "image": "0",
+      "webSearch": "35",
+      "internalReasoning": "0",
+      "inputCacheRead": "0.01",
+      "inputCacheWrite": "0"
+    },
+    "reasoning": false,
+    "embedding": false,
+    "input": ["text", "image", "video", "audio"],
+    "output": ["text"],
+    "contextWindow": 1000000,
+    "maxOutputTokens": 8192,
+    "updatedAt": "2025-02-10T00:00:00Z"
   },
   {
-    "id": "gemini-exp-1206",
-    "name": "Gemini Experimental 1206",
+    "id": "gemini-robotics-er-1.5-preview",
+    "name": "Gemini Robotics-ER 1.5 Preview",
     "pricing": {
-      "prompt": 0.075,
-      "completion": 0.3,
-      "request": 0,
-      "image": 0,
-      "webSearch": 0,
-      "internalReasoning": 0,
-      "inputCacheRead": 0.0375,
-      "inputCacheWrite": 1.125
-    }
+      "prompt": "0.3",
+      "completion": "2.5",
+      "request": "0",
+      "image": "0",
+      "webSearch": "35",
+      "internalReasoning": "2.5",
+      "inputCacheRead": "0",
+      "inputCacheWrite": "0"
+    },
+    "reasoning": true,
+    "embedding": false,
+    "input": ["text", "image", "video", "audio"],
+    "output": ["text"],
+    "contextWindow": 1000000,
+    "maxOutputTokens": 8192,
+    "updatedAt": "2025-02-10T00:00:00Z"
+  },
+  {
+    "id": "gemini-embedding",
+    "name": "Gemini Embedding",
+    "pricing": {
+      "prompt": "0.15",
+      "completion": "0",
+      "request": "0",
+      "image": "0",
+      "webSearch": "0",
+      "internalReasoning": "0",
+      "inputCacheRead": "0",
+      "inputCacheWrite": "0"
+    },
+    "reasoning": false,
+    "embedding": true,
+    "input": ["text"],
+    "output": ["text"],
+    "contextWindow": 2048,
+    "maxOutputTokens": 0,
+    "updatedAt": "2025-02-10T00:00:00Z"
   }
 ]

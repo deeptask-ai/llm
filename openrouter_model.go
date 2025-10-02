@@ -1,12 +1,10 @@
 package easyllm
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 
-	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
 )
 
@@ -32,8 +30,9 @@ type OpenRouterModelsResponse struct {
 }
 
 type OpenRouterModel struct {
-	*OpenAIModel
+	*OpenAICompletionModel
 	models map[string]OpenRouterModelInfo
+	apiKey string
 }
 
 type OpenRouterModelConfig struct {
@@ -44,18 +43,20 @@ func NewOpenRouterModel(config OpenRouterModelConfig) (*OpenRouterModel, error) 
 	if config.APIKey == "" {
 		return nil, ErrAPIKeyEmpty
 	}
-	client := openai.NewClient(
+
+	// Create the completion model with OpenRouter's API endpoint
+	completionModel, err := NewOpenAICompletionModel(
+		config.APIKey,
 		option.WithBaseURL("https://openrouter.ai/api/v1/"),
-		option.WithAPIKey(config.APIKey),
 	)
-	openaiProvider := &OpenAIModel{
-		client: client,
-		apiKey: config.APIKey,
+	if err != nil {
+		return nil, err
 	}
 
 	provider := &OpenRouterModel{
-		OpenAIModel: openaiProvider,
-		models:      make(map[string]OpenRouterModelInfo),
+		OpenAICompletionModel: completionModel,
+		models:                make(map[string]OpenRouterModelInfo),
+		apiKey:                config.APIKey,
 	}
 
 	if err := provider.loadModels(); err != nil {
@@ -147,12 +148,4 @@ func (p *OpenRouterModel) getModelInfo(modelID string) *ModelInfo {
 
 func (p *OpenRouterModel) Name() string {
 	return "openrouter"
-}
-
-func (p *OpenRouterModel) GenerateEmbeddings(ctx context.Context, req *EmbeddingRequest) (*EmbeddingResponse, error) {
-	return nil, NewUnsupportedCapabilityError("OpenRouter", "embeddings")
-}
-
-func (p *OpenRouterModel) GenerateImage(ctx context.Context, req *ImageRequest) (*ImageResponse, error) {
-	return nil, NewUnsupportedCapabilityError("OpenRouter", "image generation")
 }

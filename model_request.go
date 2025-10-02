@@ -3,12 +3,12 @@
 
 package easyllm
 
-type ModelRequest struct {
+type CompletionRequest struct {
 	Instructions string
 	Model        string
 	Messages     []*ModelMessage
 	Config       *ModelConfig
-	Cost         bool
+	WithCost     bool
 }
 
 type MessageRole string

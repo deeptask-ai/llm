@@ -99,8 +99,9 @@ func NewOpenAICompletionModel(apiKey string, opts ...option.RequestOption) (*Ope
 	return &OpenAICompletionModel{OpenAIBaseModel: base}, nil
 }
 
-func (p *OpenAICompletionModel) Stream(ctx context.Context, req *types.CompletionRequest, tools []types.ModelTool) (types.StreamCompletionResponse, error) {
-	params, err := ToChatCompletionParams(req.Model, req.Instructions, req.Messages, req.Config, tools)
+func (p *OpenAICompletionModel) Stream(ctx context.Context, req *types.CompletionRequest, tools []types.ModelTool, opts ...types.CompletionOption) (types.StreamCompletionResponse, error) {
+	config := types.ApplyCompletionOptions(opts)
+	params, err := ToChatCompletionParams(req.Model, req.Instructions, req.Messages, config, tools)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create chat completion params: %w", err)
 	}
@@ -179,7 +180,7 @@ func (p *OpenAICompletionModel) Stream(ctx context.Context, req *types.Completio
 
 		// Calculate cost if requested
 		var cost *float64
-		if req.WithCost {
+		if config != nil && config.WithCost {
 			modelInfo := p.getModelInfo(req.Model)
 			cost = common.CalculateCost(modelInfo, usage)
 		}
@@ -198,8 +199,9 @@ func (p *OpenAICompletionModel) Stream(ctx context.Context, req *types.Completio
 	return chunkChan, nil
 }
 
-func (p *OpenAICompletionModel) Complete(ctx context.Context, req *types.CompletionRequest, tools []types.ModelTool) (*types.CompletionResponse, error) {
-	params, err := ToChatCompletionParams(req.Model, req.Instructions, req.Messages, req.Config, tools)
+func (p *OpenAICompletionModel) Complete(ctx context.Context, req *types.CompletionRequest, tools []types.ModelTool, opts ...types.CompletionOption) (*types.CompletionResponse, error) {
+	config := types.ApplyCompletionOptions(opts)
+	params, err := ToChatCompletionParams(req.Model, req.Instructions, req.Messages, config, tools)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create chat completion params: %w", err)
 	}
@@ -225,7 +227,7 @@ func (p *OpenAICompletionModel) Complete(ctx context.Context, req *types.Complet
 
 	// Calculate cost if requested
 	var cost *float64
-	if req.WithCost {
+	if config != nil && config.WithCost {
 		modelInfo := p.getModelInfo(req.Model)
 		cost = common.CalculateCost(modelInfo, usage)
 	}
@@ -472,7 +474,7 @@ func (m *OpenAIModel) ClearModelCache() {
 
 // Helper functions
 
-func ToChatCompletionParams(model string, instructions string, messages []*types.ModelMessage, config *types.ModelConfig, tools []types.ModelTool) (openai.ChatCompletionNewParams, error) {
+func ToChatCompletionParams(model string, instructions string, messages []*types.ModelMessage, config *types.CompletionOptions, tools []types.ModelTool) (openai.ChatCompletionNewParams, error) {
 	openaiMessages := make([]openai.ChatCompletionMessageParamUnion, 0, len(messages)+1)
 
 	// Add system content if provided
@@ -510,31 +512,31 @@ func ToChatCompletionParams(model string, instructions string, messages []*types
 	}
 
 	if config != nil {
-		if config.Temperature != 0 {
-			params.Temperature = openai.Float(config.Temperature)
+		if config.Temperature != nil {
+			params.Temperature = openai.Float(*config.Temperature)
 		}
-		if config.TopP != 0 {
-			params.TopP = openai.Float(config.TopP)
+		if config.TopP != nil {
+			params.TopP = openai.Float(*config.TopP)
 		}
-		if config.MaxTokens != 0 {
-			params.MaxTokens = openai.Int(int64(config.MaxTokens))
+		if config.MaxTokens != nil {
+			params.MaxTokens = openai.Int(int64(*config.MaxTokens))
 		}
-		if config.PresencePenalty != 0 {
-			params.PresencePenalty = openai.Float(config.PresencePenalty)
+		if config.PresencePenalty != nil {
+			params.PresencePenalty = openai.Float(*config.PresencePenalty)
 		}
-		if config.FrequencyPenalty != 0 {
-			params.FrequencyPenalty = openai.Float(config.FrequencyPenalty)
+		if config.FrequencyPenalty != nil {
+			params.FrequencyPenalty = openai.Float(*config.FrequencyPenalty)
 		}
-		if config.Seed != 0 {
-			params.Seed = openai.Int(config.Seed)
+		if config.Seed != nil {
+			params.Seed = openai.Int(*config.Seed)
 		}
-		if config.ReasoningEffort != "" {
-			switch config.ReasoningEffort {
-			case "low":
+		if config.ReasoningEffort != nil {
+			switch *config.ReasoningEffort {
+			case types.ReasoningEffortLow:
 				params.ReasoningEffort = openai.ReasoningEffortLow
-			case "medium":
+			case types.ReasoningEffortMedium:
 				params.ReasoningEffort = openai.ReasoningEffortMedium
-			case "high":
+			case types.ReasoningEffortHigh:
 				params.ReasoningEffort = openai.ReasoningEffortHigh
 			default:
 				params.ReasoningEffort = openai.ReasoningEffortLow
@@ -547,8 +549,8 @@ func ToChatCompletionParams(model string, instructions string, messages []*types
 				OfStringArray: config.Stop,
 			}
 		}
-		if config.ResponseFormat != "" {
-			if config.ResponseFormat == types.ResponseFormatJson {
+		if config.ResponseFormat != nil {
+			if *config.ResponseFormat == types.ResponseFormatJson {
 				params.ResponseFormat = openai.ChatCompletionNewParamsResponseFormatUnion{
 					OfJSONObject: &openai.ResponseFormatJSONObjectParam{},
 				}

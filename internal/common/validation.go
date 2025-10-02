@@ -46,13 +46,6 @@ func ValidateCompletionRequest(req *types.CompletionRequest) error {
 		}
 	}
 
-	// Validate config if provided
-	if req.Config != nil {
-		if err := ValidateModelConfig(req.Config); err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
 
@@ -129,7 +122,111 @@ func validateArtifact(artifact *types.ModelArtifact, msgIndex, artifactIndex int
 	return nil
 }
 
-// ValidateModelConfig validates model configuration parameters
+// ValidateCompletionOptions validates completion configuration options
+func ValidateCompletionOptions(config *types.CompletionOptions) error {
+	if config == nil {
+		return nil // Config is optional
+	}
+
+	// Validate temperature
+	if config.Temperature != nil {
+		if *config.Temperature < MinTemperature || *config.Temperature > MaxTemperature {
+			return types.NewValidationError(
+				"temperature",
+				fmt.Sprintf("must be between %.1f and %.1f", MinTemperature, MaxTemperature),
+				*config.Temperature,
+			)
+		}
+	}
+
+	// Validate top_p
+	if config.TopP != nil {
+		if *config.TopP < MinTopP || *config.TopP > MaxTopP {
+			return types.NewValidationError(
+				"topP",
+				fmt.Sprintf("must be between %.1f and %.1f", MinTopP, MaxTopP),
+				*config.TopP,
+			)
+		}
+	}
+
+	// Validate max_tokens
+	if config.MaxTokens != nil {
+		if *config.MaxTokens < MinMaxTokens || *config.MaxTokens > MaxMaxTokens {
+			return types.NewValidationError(
+				"maxTokens",
+				fmt.Sprintf("must be between %d and %d", MinMaxTokens, MaxMaxTokens),
+				*config.MaxTokens,
+			)
+		}
+	}
+
+	// Validate presence_penalty
+	if config.PresencePenalty != nil {
+		if *config.PresencePenalty < MinPresencePenalty || *config.PresencePenalty > MaxPresencePenalty {
+			return types.NewValidationError(
+				"presencePenalty",
+				fmt.Sprintf("must be between %.1f and %.1f", MinPresencePenalty, MaxPresencePenalty),
+				*config.PresencePenalty,
+			)
+		}
+	}
+
+	// Validate frequency_penalty
+	if config.FrequencyPenalty != nil {
+		if *config.FrequencyPenalty < MinFrequencyPenalty || *config.FrequencyPenalty > MaxFrequencyPenalty {
+			return types.NewValidationError(
+				"frequencyPenalty",
+				fmt.Sprintf("must be between %.1f and %.1f", MinFrequencyPenalty, MaxFrequencyPenalty),
+				*config.FrequencyPenalty,
+			)
+		}
+	}
+
+	// Validate reasoning effort
+	if config.ReasoningEffort != nil {
+		validEfforts := map[types.ReasoningEffort]bool{
+			types.ReasoningEffortLow:    true,
+			types.ReasoningEffortMedium: true,
+			types.ReasoningEffortHigh:   true,
+		}
+		if !validEfforts[*config.ReasoningEffort] {
+			return types.NewValidationError(
+				"reasoningEffort",
+				"must be one of: low, medium, high",
+				string(*config.ReasoningEffort),
+			)
+		}
+	}
+
+	// Validate response format
+	if config.ResponseFormat != nil {
+		validFormats := map[types.ResponseFormat]bool{
+			types.ResponseFormatJson:       true,
+			types.ResponseFormatJsonSchema: true,
+		}
+		if !validFormats[*config.ResponseFormat] {
+			return types.NewValidationError(
+				"responseFormat",
+				"must be one of: json, json_schema",
+				string(*config.ResponseFormat),
+			)
+		}
+
+		// If json_schema is specified, JSONSchema must be provided
+		if *config.ResponseFormat == types.ResponseFormatJsonSchema && config.JSONSchema == nil {
+			return types.NewValidationError(
+				"jsonSchema",
+				"must be provided when responseFormat is json_schema",
+				nil,
+			)
+		}
+	}
+
+	return nil
+}
+
+// ValidateModelConfig validates model configuration parameters (deprecated, use ValidateCompletionOptions)
 func ValidateModelConfig(config *types.ModelConfig) error {
 	if config == nil {
 		return nil // Config is optional

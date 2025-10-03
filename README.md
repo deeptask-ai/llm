@@ -4,7 +4,7 @@ A unified Go client library for interacting with multiple Large Language Model (
 
 [![Go Version](https://img.shields.io/badge/Go-1.24.4+-blue.svg)](https://golang.org)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Go Report Card](https://goreportcard.com/badge/github.com/easymvp/easyllm)](https://goreportcard.com/report/github.com/easymvp/easyllm)
+[![Go Report Card](https://goreportcard.com/badge/github.com/deeptask-ai/llm)](https://goreportcard.com/report/github.com/deeptask-ai/llm)
 
 ## Features
 
@@ -39,7 +39,7 @@ A unified Go client library for interacting with multiple Large Language Model (
 ## Installation
 
 ```bash
-go get github.com/easymvp/easyllm
+go get github.com/deeptask-ai/llm
 ```
 
 ## Quick Start
@@ -54,14 +54,14 @@ import (
     "fmt"
     "log"
 
-    "github.com/easymvp/easyllm"
-    "github.com/easymvp/easyllm/types"
-    "github.com/easymvp/easyllm/types/completion"
+    "github.com/deeptask-ai/llm"
+    "github.com/deeptask-ai/llm/types"
+    "github.com/deeptask-ai/llm/types/completion"
 )
 
 func main() {
     // Initialize OpenAI client
-    model, err := easyllm.NewOpenAIModel(
+    model, err := llm.NewOpenAIModel(
         types.WithAPIKey("your-openai-api-key"),
     )
     if err != nil {
@@ -100,7 +100,7 @@ func main() {
 
 ```go
 func streamExample() {
-    model, _ := easyllm.NewOpenAIModel(
+    model, _ := llm.NewOpenAIModel(
         types.WithAPIKey("your-api-key"),
     )
 
@@ -136,11 +136,11 @@ func streamExample() {
 ```go
 func multiProviderExample() {
     // Initialize multiple providers
-    openai, _ := easyllm.NewOpenAIModel(
+    openai, _ := llm.NewOpenAIModel(
         types.WithAPIKey("openai-key"),
     )
 
-    deepseek, _ := easyllm.NewDeepSeekModel(
+    deepseek, _ := llm.NewDeepSeekModel(
         types.WithAPIKey("deepseek-key"),
     )
 
@@ -171,7 +171,7 @@ func multiProviderExample() {
 ```go
 func reasoningExample() {
     // Use reasoning model with completion API
-    model, _ := easyllm.NewOpenAIModel(
+    model, _ := llm.NewOpenAIModel(
         types.WithAPIKey("your-api-key"),
     )
 
@@ -204,7 +204,7 @@ func reasoningExample() {
 ```go
 func conversationExample() {
     // Use conversation API for advanced reasoning
-    model, _ := easyllm.NewOpenAIConversationModel(
+    model, _ := llm.NewOpenAIConversationModel(
         types.WithAPIKey("your-api-key"),
     )
 
@@ -269,18 +269,18 @@ export DEEPSEEK_API_KEY="your-deepseek-key"
 
 ```go
 // OpenAI with custom base URL
-openai, _ := easyllm.NewOpenAIModel(
+openai, _ := llm.NewOpenAIModel(
     types.WithAPIKey("key"),
     types.WithBaseURL("https://api.openai.com/v1"), // Optional
 )
 
 // DeepSeek
-deepseek, _ := easyllm.NewDeepSeekModel(
+deepseek, _ := llm.NewDeepSeekModel(
     types.WithAPIKey("key"),
 )
 
 // Using environment variables
-model, _ := easyllm.NewOpenAIModel(
+model, _ := llm.NewOpenAIModel(
     types.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
 )
 ```
@@ -369,8 +369,8 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/easymvp/easyllm.git
-cd easyllm
+git clone https://github.com/deeptask-ai/llm.git
+cd llm
 ```
 
 2. Install dependencies:
@@ -406,9 +406,9 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 ## Support
 
-- 📖 [Documentation](https://github.com/easymvp/easyllm/wiki)
-- 🐛 [Issue Tracker](https://github.com/easymvp/easyllm/issues)
-- 💬 [Discussions](https://github.com/easymvp/easyllm/discussions)
+- 📖 [Documentation](https://github.com/deeptask-ai/llm/wiki)
+- 🐛 [Issue Tracker](https://github.com/deeptask-ai/llm/issues)
+- 💬 [Discussions](https://github.com/deeptask-ai/llm/discussions)
 
 ## Roadmap
 
@@ -421,4 +421,4 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 ---
 
-Made with ❤️ by the [EasyMVP](https://github.com/easymvp) team
+Made with ❤️ by the [EasyMVP](https://github.com/deeptask-ai) team

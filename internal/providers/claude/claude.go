@@ -1,10 +1,13 @@
+// Copyright 2025 The DeepTask Authors
+// SPDX-License-Identifier: Apache-2.0
+
 package claude
 
 import (
 	_ "embed"
 	"encoding/json"
-	"github.com/easymvp/easyllm/internal/providers/openai"
-	"github.com/easymvp/easyllm/types"
+	"github.com/deeptask-ai/llm"
+	"github.com/deeptask-ai/llm/internal/providers/openai"
 	"github.com/openai/openai-go/v3/option"
 )
 
@@ -12,11 +15,11 @@ type ClaudeModel struct {
 	*openai.OpenAICompletionModel
 }
 
-func NewClaudeModel(opts ...types.ModelOption) (*ClaudeModel, error) {
-	config := types.ApplyOptions(opts)
+func NewClaudeModel(opts ...llm.ModelOption) (*ClaudeModel, error) {
+	config := llm.ApplyOptions(opts)
 
 	if config.APIKey == "" {
-		return nil, types.ErrAPIKeyEmpty
+		return nil, llm.ErrAPIKeyEmpty
 	}
 
 	// Build request options list with defaults
@@ -48,8 +51,8 @@ func NewClaudeModel(opts ...types.ModelOption) (*ClaudeModel, error) {
 //go:embed claude.json
 var claudeModels []byte
 
-func (p *ClaudeModel) SupportedModels() []*types.ModelInfo {
-	var models []*types.ModelInfo
+func (p *ClaudeModel) SupportedModels() []*llm.ModelInfo {
+	var models []*llm.ModelInfo
 	if err := json.Unmarshal(claudeModels, &models); err != nil {
 		return nil
 	}

@@ -1,17 +1,16 @@
-package completion
+package llm
 
 import (
 	"context"
-	"github.com/easymvp/easyllm/types"
 )
 
 // CompletionModel defines the interface for text completion operations
 type CompletionModel interface {
-	types.BaseModel
+	BaseModel
 	// StreamComplete generates streaming content from the model
-	StreamComplete(ctx context.Context, req *CompletionRequest, tools []types.ModelTool) (StreamCompletionResponse, error)
+	StreamComplete(ctx context.Context, req *CompletionRequest) (StreamCompletionResponse, error)
 	// Complete generates complete content from the model
-	Complete(ctx context.Context, req *CompletionRequest, tools []types.ModelTool) (*CompletionResponse, error)
+	Complete(ctx context.Context, req *CompletionRequest) (*CompletionResponse, error)
 }
 
 type ResponseFormat string
@@ -32,16 +31,16 @@ const (
 type CompletionRequest struct {
 	Instructions string
 	Model        string
-	Messages     []*types.ModelMessage
+	Messages     []*ModelMessage
 	Options      []CompletionOption
 }
 
 // StreamModelResponse represents a stream of API chunks
-type StreamCompletionResponse <-chan types.StreamChunk
+type StreamCompletionResponse <-chan StreamChunk
 
 type CompletionResponse struct {
 	Output string `json:"output"`
-	Usage  *types.TokenUsage
+	Usage  *TokenUsage
 	Cost   *float64
 }
 

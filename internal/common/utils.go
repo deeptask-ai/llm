@@ -1,13 +1,13 @@
+// Copyright 2025 The DeepTask Authors
+// SPDX-License-Identifier: Apache-2.0
+
 package common
 
 import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/easymvp/easyllm/types"
-	"github.com/easymvp/easyllm/types/completion"
-	"github.com/easymvp/easyllm/types/embedding"
-	"github.com/easymvp/easyllm/types/image"
+	"github.com/deeptask-ai/llm"
 	"strconv"
 	"sync"
 	"text/template"
@@ -21,7 +21,7 @@ var (
 
 // CalculateCost calculates the cost based on token usage and model pricing information
 // This function is shared across all model implementations
-func CalculateCost(modelInfo *types.ModelInfo, usage *types.TokenUsage) *float64 {
+func CalculateCost(modelInfo *llm.ModelInfo, usage *llm.TokenUsage) *float64 {
 	if modelInfo == nil {
 		return nil
 	}
@@ -55,38 +55,38 @@ func CalculateCost(modelInfo *types.ModelInfo, usage *types.TokenUsage) *float64
 		totalCost += (float64(usage.TotalReasoningTokens) / 1000000.0) * internalReasoningPrice
 	}
 
-	// Calculate completion token costs
-	completionPrice, err := strconv.ParseFloat(modelInfo.Pricing.Completion, 64)
+	// Calculate llm token costs
+	llmPrice, err := strconv.ParseFloat(modelInfo.Pricing.Completion, 64)
 	if err != nil {
 		return nil
 	}
-	totalCost += (float64(usage.TotalOutputTokens) / 1000000.0) * completionPrice
+	totalCost += (float64(usage.TotalOutputTokens) / 1000000.0) * llmPrice
 
 	return &totalCost
 }
 
-// CalculateImageCost calculates cost for image generation
-func CalculateImageCost(modelInfo *types.ModelInfo, imageCount int) *float64 {
+// CalculateImageCost calculates cost for llm generation
+func CalculateImageCost(modelInfo *llm.ModelInfo, llmCount int) *float64 {
 	if modelInfo == nil {
 		return nil
 	}
 
-	imagePrice, err := strconv.ParseFloat(modelInfo.Pricing.Image, 64)
+	llmPrice, err := strconv.ParseFloat(modelInfo.Pricing.Image, 64)
 	if err != nil {
 		return nil
 	}
 
-	totalCost := imagePrice * float64(imageCount)
+	totalCost := llmPrice * float64(llmCount)
 	return &totalCost
 }
 
 // CreateTokenUsage creates a standardized TokenUsage struct
-func CreateTokenUsage(inputTokens, outputTokens, reasoningTokens int64, images, requests int, cacheReadTokens, cacheWriteTokens int64) *types.TokenUsage {
-	return &types.TokenUsage{
+func CreateTokenUsage(inputTokens, outputTokens, reasoningTokens int64, llms, requests int, cacheReadTokens, cacheWriteTokens int64) *llm.TokenUsage {
+	return &llm.TokenUsage{
 		TotalInputTokens:      inputTokens,
 		TotalOutputTokens:     outputTokens,
 		TotalReasoningTokens:  reasoningTokens,
-		TotalImages:           images,
+		TotalImages:           llms,
 		TotalWebSearches:      0,
 		TotalRequests:         requests,
 		TotalCacheReadTokens:  cacheReadTokens,
@@ -95,7 +95,7 @@ func CreateTokenUsage(inputTokens, outputTokens, reasoningTokens int64, images, 
 }
 
 // ValidateModelRequest validates common model request fields
-func ValidateModelRequest(req *completion.CompletionRequest) error {
+func ValidateModelRequest(req *llm.CompletionRequest) error {
 	if req == nil {
 		return errors.New("request cannot be nil")
 	}
@@ -105,8 +105,8 @@ func ValidateModelRequest(req *completion.CompletionRequest) error {
 	return nil
 }
 
-// ValidateEmbeddingRequest validates embedding request fields
-func ValidateEmbeddingRequest(req *embedding.EmbeddingRequest) error {
+// ValidateEmbeddingRequest validates llm request fields
+func ValidateEmbeddingRequest(req *llm.EmbeddingRequest) error {
 	if req == nil {
 		return errors.New("request cannot be nil")
 	}
@@ -119,13 +119,13 @@ func ValidateEmbeddingRequest(req *embedding.EmbeddingRequest) error {
 	return nil
 }
 
-// ValidateImageRequest validates image request fields
-func ValidateImageRequest(req *image.ImageRequest) error {
+// ValidateImageRequest validates llm request fields
+func ValidateImageRequest(req *llm.ImageRequest) error {
 	if req == nil {
 		return errors.New("request cannot be nil")
 	}
 	if req.Instructions == "" {
-		return types.ErrEmptyInstructions
+		return llm.ErrEmptyInstructions
 	}
 	return nil
 }
@@ -169,7 +169,7 @@ func ClearTemplateCache() {
 }
 
 // OptimizedCalculateCost is a more efficient version of cost calculation
-func OptimizedCalculateCost(modelInfo *types.ModelInfo, usage *types.TokenUsage) *float64 {
+func OptimizedCalculateCost(modelInfo *llm.ModelInfo, usage *llm.TokenUsage) *float64 {
 	if modelInfo == nil || usage == nil {
 		return nil
 	}
@@ -183,7 +183,7 @@ func OptimizedCalculateCost(modelInfo *types.ModelInfo, usage *types.TokenUsage)
 		return nil
 	}
 
-	completionPrice, err := strconv.ParseFloat(modelInfo.Pricing.Completion, 64)
+	llmPrice, err := strconv.ParseFloat(modelInfo.Pricing.Completion, 64)
 	if err != nil {
 		return nil
 	}
@@ -202,8 +202,8 @@ func OptimizedCalculateCost(modelInfo *types.ModelInfo, usage *types.TokenUsage)
 		totalCost += (float64(usage.TotalReasoningTokens) / tokensPerMillion) * internalReasoningPrice
 	}
 
-	// Calculate completion token costs
-	totalCost += (float64(usage.TotalOutputTokens) / tokensPerMillion) * completionPrice
+	// Calculate llm token costs
+	totalCost += (float64(usage.TotalOutputTokens) / tokensPerMillion) * llmPrice
 
 	return &totalCost
 }

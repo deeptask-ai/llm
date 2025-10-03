@@ -1,4 +1,4 @@
-package types
+package llm
 
 import (
 	"encoding/json"
@@ -59,6 +59,7 @@ type StreamUsageChunk struct {
 func (c StreamUsageChunk) Type() StreamChunkType {
 	return UsageChunkType
 }
+
 func (c StreamUsageChunk) String() string {
 	jsonBytes, err := json.Marshal(c.Usage)
 	if err != nil {

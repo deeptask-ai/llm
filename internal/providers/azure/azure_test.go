@@ -1,9 +1,12 @@
+// Copyright 2025 The DeepTask Authors
+// SPDX-License-Identifier: Apache-2.0
+
 package azure
 
 import (
+	"github.com/deeptask-ai/llm"
 	"testing"
 
-	"github.com/easymvp/easyllm/types"
 	"github.com/openai/openai-go/v3/option"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -12,38 +15,38 @@ import (
 func TestNewAzureOpenAIModel_Success(t *testing.T) {
 	tests := []struct {
 		name        string
-		opts        []types.ModelOption
+		opts        []llm.ModelOption
 		wantName    string
 		description string
 	}{
 		{
 			name: "basic_configuration",
-			opts: []types.ModelOption{
-				types.WithAPIKey("test-api-key"),
-				types.WithBaseURL("https://test.openai.azure.com"),
-				types.WithAPIVersion("2024-02-15-preview"),
+			opts: []llm.ModelOption{
+				llm.WithAPIKey("test-api-key"),
+				llm.WithBaseURL("https://test.openai.azure.com"),
+				llm.WithAPIVersion("2024-02-15-preview"),
 			},
 			wantName:    "azure_openai",
 			description: "Should create Azure OpenAI model with basic configuration",
 		},
 		{
 			name: "with_custom_request_option",
-			opts: []types.ModelOption{
-				types.WithAPIKey("test-api-key"),
-				types.WithBaseURL("https://test.openai.azure.com"),
-				types.WithAPIVersion("2024-02-15-preview"),
-				types.WithRequestOption(option.WithHeader("Custom-Header", "custom-value")),
+			opts: []llm.ModelOption{
+				llm.WithAPIKey("test-api-key"),
+				llm.WithBaseURL("https://test.openai.azure.com"),
+				llm.WithAPIVersion("2024-02-15-preview"),
+				llm.WithRequestOption(option.WithHeader("Custom-Header", "custom-value")),
 			},
 			wantName:    "azure_openai",
 			description: "Should create Azure OpenAI model with custom request options",
 		},
 		{
 			name: "with_multiple_request_options",
-			opts: []types.ModelOption{
-				types.WithAPIKey("test-api-key"),
-				types.WithBaseURL("https://test.openai.azure.com"),
-				types.WithAPIVersion("2024-02-15-preview"),
-				types.WithRequestOptions(
+			opts: []llm.ModelOption{
+				llm.WithAPIKey("test-api-key"),
+				llm.WithBaseURL("https://test.openai.azure.com"),
+				llm.WithAPIVersion("2024-02-15-preview"),
+				llm.WithRequestOptions(
 					option.WithHeader("Custom-Header-1", "value1"),
 					option.WithHeader("Custom-Header-2", "value2"),
 				),
@@ -53,20 +56,20 @@ func TestNewAzureOpenAIModel_Success(t *testing.T) {
 		},
 		{
 			name: "different_api_version",
-			opts: []types.ModelOption{
-				types.WithAPIKey("test-api-key"),
-				types.WithBaseURL("https://test.openai.azure.com"),
-				types.WithAPIVersion("2023-05-15"),
+			opts: []llm.ModelOption{
+				llm.WithAPIKey("test-api-key"),
+				llm.WithBaseURL("https://test.openai.azure.com"),
+				llm.WithAPIVersion("2023-05-15"),
 			},
 			wantName:    "azure_openai",
 			description: "Should create Azure OpenAI model with different API version",
 		},
 		{
 			name: "custom_base_url",
-			opts: []types.ModelOption{
-				types.WithAPIKey("test-api-key"),
-				types.WithBaseURL("https://custom.openai.azure.com/openai/deployments/gpt-4"),
-				types.WithAPIVersion("2024-02-15-preview"),
+			opts: []llm.ModelOption{
+				llm.WithAPIKey("test-api-key"),
+				llm.WithBaseURL("https://custom.openai.azure.com/openai/deployments/gpt-4"),
+				llm.WithAPIVersion("2024-02-15-preview"),
 			},
 			wantName:    "azure_openai",
 			description: "Should create Azure OpenAI model with custom base URL",
@@ -91,23 +94,23 @@ func TestNewAzureOpenAIModel_Success(t *testing.T) {
 func TestNewAzureOpenAIModel_MissingAPIKey(t *testing.T) {
 	tests := []struct {
 		name        string
-		opts        []types.ModelOption
+		opts        []llm.ModelOption
 		description string
 	}{
 		{
 			name: "empty_api_key",
-			opts: []types.ModelOption{
-				types.WithAPIKey(""),
-				types.WithBaseURL("https://test.openai.azure.com"),
-				types.WithAPIVersion("2024-02-15-preview"),
+			opts: []llm.ModelOption{
+				llm.WithAPIKey(""),
+				llm.WithBaseURL("https://test.openai.azure.com"),
+				llm.WithAPIVersion("2024-02-15-preview"),
 			},
 			description: "Should return error when API key is empty string",
 		},
 		{
 			name: "no_api_key",
-			opts: []types.ModelOption{
-				types.WithBaseURL("https://test.openai.azure.com"),
-				types.WithAPIVersion("2024-02-15-preview"),
+			opts: []llm.ModelOption{
+				llm.WithBaseURL("https://test.openai.azure.com"),
+				llm.WithAPIVersion("2024-02-15-preview"),
 			},
 			description: "Should return error when API key is not provided",
 		},
@@ -118,7 +121,7 @@ func TestNewAzureOpenAIModel_MissingAPIKey(t *testing.T) {
 			model, err := NewAzureOpenAIModel(tt.opts...)
 
 			assert.Error(t, err, tt.description)
-			assert.ErrorIs(t, err, types.ErrAPIKeyEmpty, "Error should be ErrAPIKeyEmpty")
+			assert.ErrorIs(t, err, llm.ErrAPIKeyEmpty, "Error should be ErrAPIKeyEmpty")
 			assert.Nil(t, model, "Model should be nil when error occurs")
 		})
 	}
@@ -127,23 +130,23 @@ func TestNewAzureOpenAIModel_MissingAPIKey(t *testing.T) {
 func TestNewAzureOpenAIModel_MissingBaseURL(t *testing.T) {
 	tests := []struct {
 		name        string
-		opts        []types.ModelOption
+		opts        []llm.ModelOption
 		description string
 	}{
 		{
 			name: "empty_base_url",
-			opts: []types.ModelOption{
-				types.WithAPIKey("test-api-key"),
-				types.WithBaseURL(""),
-				types.WithAPIVersion("2024-02-15-preview"),
+			opts: []llm.ModelOption{
+				llm.WithAPIKey("test-api-key"),
+				llm.WithBaseURL(""),
+				llm.WithAPIVersion("2024-02-15-preview"),
 			},
 			description: "Should return error when base URL is empty string",
 		},
 		{
 			name: "no_base_url",
-			opts: []types.ModelOption{
-				types.WithAPIKey("test-api-key"),
-				types.WithAPIVersion("2024-02-15-preview"),
+			opts: []llm.ModelOption{
+				llm.WithAPIKey("test-api-key"),
+				llm.WithAPIVersion("2024-02-15-preview"),
 			},
 			description: "Should return error when base URL is not provided",
 		},
@@ -154,7 +157,7 @@ func TestNewAzureOpenAIModel_MissingBaseURL(t *testing.T) {
 			model, err := NewAzureOpenAIModel(tt.opts...)
 
 			assert.Error(t, err, tt.description)
-			assert.ErrorIs(t, err, types.ErrBaseURLEmpty, "Error should be ErrBaseURLEmpty")
+			assert.ErrorIs(t, err, llm.ErrBaseURLEmpty, "Error should be ErrBaseURLEmpty")
 			assert.Nil(t, model, "Model should be nil when error occurs")
 		})
 	}
@@ -163,23 +166,23 @@ func TestNewAzureOpenAIModel_MissingBaseURL(t *testing.T) {
 func TestNewAzureOpenAIModel_MissingAPIVersion(t *testing.T) {
 	tests := []struct {
 		name        string
-		opts        []types.ModelOption
+		opts        []llm.ModelOption
 		description string
 	}{
 		{
 			name: "empty_api_version",
-			opts: []types.ModelOption{
-				types.WithAPIKey("test-api-key"),
-				types.WithBaseURL("https://test.openai.azure.com"),
-				types.WithAPIVersion(""),
+			opts: []llm.ModelOption{
+				llm.WithAPIKey("test-api-key"),
+				llm.WithBaseURL("https://test.openai.azure.com"),
+				llm.WithAPIVersion(""),
 			},
 			description: "Should return error when API version is empty string",
 		},
 		{
 			name: "no_api_version",
-			opts: []types.ModelOption{
-				types.WithAPIKey("test-api-key"),
-				types.WithBaseURL("https://test.openai.azure.com"),
+			opts: []llm.ModelOption{
+				llm.WithAPIKey("test-api-key"),
+				llm.WithBaseURL("https://test.openai.azure.com"),
 			},
 			description: "Should return error when API version is not provided",
 		},
@@ -190,7 +193,7 @@ func TestNewAzureOpenAIModel_MissingAPIVersion(t *testing.T) {
 			model, err := NewAzureOpenAIModel(tt.opts...)
 
 			assert.Error(t, err, tt.description)
-			assert.ErrorIs(t, err, types.ErrAPIVersionEmpty, "Error should be ErrAPIVersionEmpty")
+			assert.ErrorIs(t, err, llm.ErrAPIVersionEmpty, "Error should be ErrAPIVersionEmpty")
 			assert.Nil(t, model, "Model should be nil when error occurs")
 		})
 	}
@@ -199,41 +202,41 @@ func TestNewAzureOpenAIModel_MissingAPIVersion(t *testing.T) {
 func TestNewAzureOpenAIModel_ErrorPriority(t *testing.T) {
 	tests := []struct {
 		name        string
-		opts        []types.ModelOption
+		opts        []llm.ModelOption
 		expectedErr error
 		description string
 	}{
 		{
 			name: "missing_api_key_first",
-			opts: []types.ModelOption{
-				types.WithBaseURL("https://test.openai.azure.com"),
-				types.WithAPIVersion("2024-02-15-preview"),
+			opts: []llm.ModelOption{
+				llm.WithBaseURL("https://test.openai.azure.com"),
+				llm.WithAPIVersion("2024-02-15-preview"),
 			},
-			expectedErr: types.ErrAPIKeyEmpty,
+			expectedErr: llm.ErrAPIKeyEmpty,
 			description: "Should check API key first",
 		},
 		{
 			name: "missing_base_url_second",
-			opts: []types.ModelOption{
-				types.WithAPIKey("test-api-key"),
-				types.WithAPIVersion("2024-02-15-preview"),
+			opts: []llm.ModelOption{
+				llm.WithAPIKey("test-api-key"),
+				llm.WithAPIVersion("2024-02-15-preview"),
 			},
-			expectedErr: types.ErrBaseURLEmpty,
+			expectedErr: llm.ErrBaseURLEmpty,
 			description: "Should check base URL after API key",
 		},
 		{
 			name: "missing_api_version_third",
-			opts: []types.ModelOption{
-				types.WithAPIKey("test-api-key"),
-				types.WithBaseURL("https://test.openai.azure.com"),
+			opts: []llm.ModelOption{
+				llm.WithAPIKey("test-api-key"),
+				llm.WithBaseURL("https://test.openai.azure.com"),
 			},
-			expectedErr: types.ErrAPIVersionEmpty,
+			expectedErr: llm.ErrAPIVersionEmpty,
 			description: "Should check API version after base URL",
 		},
 		{
 			name:        "missing_all_required",
-			opts:        []types.ModelOption{},
-			expectedErr: types.ErrAPIKeyEmpty,
+			opts:        []llm.ModelOption{},
+			expectedErr: llm.ErrAPIKeyEmpty,
 			description: "Should return API key error first when all are missing",
 		},
 	}
@@ -251,9 +254,9 @@ func TestNewAzureOpenAIModel_ErrorPriority(t *testing.T) {
 
 func TestAzureOpenAIModel_Name(t *testing.T) {
 	model, err := NewAzureOpenAIModel(
-		types.WithAPIKey("test-api-key"),
-		types.WithBaseURL("https://test.openai.azure.com"),
-		types.WithAPIVersion("2024-02-15-preview"),
+		llm.WithAPIKey("test-api-key"),
+		llm.WithBaseURL("https://test.openai.azure.com"),
+		llm.WithAPIVersion("2024-02-15-preview"),
 	)
 
 	require.NoError(t, err)
@@ -264,9 +267,9 @@ func TestAzureOpenAIModel_Name(t *testing.T) {
 
 func TestAzureOpenAIModel_ModelStructure(t *testing.T) {
 	model, err := NewAzureOpenAIModel(
-		types.WithAPIKey("test-api-key"),
-		types.WithBaseURL("https://test.openai.azure.com"),
-		types.WithAPIVersion("2024-02-15-preview"),
+		llm.WithAPIKey("test-api-key"),
+		llm.WithBaseURL("https://test.openai.azure.com"),
+		llm.WithAPIVersion("2024-02-15-preview"),
 	)
 
 	require.NoError(t, err)
@@ -295,15 +298,15 @@ func TestAzureOpenAIModel_ModelStructure(t *testing.T) {
 func TestNewAzureOpenAIModel_MultipleInstances(t *testing.T) {
 	// Create multiple instances with different configurations
 	model1, err1 := NewAzureOpenAIModel(
-		types.WithAPIKey("test-api-key-1"),
-		types.WithBaseURL("https://test1.openai.azure.com"),
-		types.WithAPIVersion("2024-02-15-preview"),
+		llm.WithAPIKey("test-api-key-1"),
+		llm.WithBaseURL("https://test1.openai.azure.com"),
+		llm.WithAPIVersion("2024-02-15-preview"),
 	)
 
 	model2, err2 := NewAzureOpenAIModel(
-		types.WithAPIKey("test-api-key-2"),
-		types.WithBaseURL("https://test2.openai.azure.com"),
-		types.WithAPIVersion("2023-05-15"),
+		llm.WithAPIKey("test-api-key-2"),
+		llm.WithBaseURL("https://test2.openai.azure.com"),
+		llm.WithAPIVersion("2023-05-15"),
 	)
 
 	require.NoError(t, err1)
@@ -318,10 +321,10 @@ func TestNewAzureOpenAIModel_MultipleInstances(t *testing.T) {
 
 // Benchmark tests
 func BenchmarkNewAzureOpenAIModel_Success(b *testing.B) {
-	opts := []types.ModelOption{
-		types.WithAPIKey("test-api-key"),
-		types.WithBaseURL("https://test.openai.azure.com"),
-		types.WithAPIVersion("2024-02-15-preview"),
+	opts := []llm.ModelOption{
+		llm.WithAPIKey("test-api-key"),
+		llm.WithBaseURL("https://test.openai.azure.com"),
+		llm.WithAPIVersion("2024-02-15-preview"),
 	}
 
 	b.ResetTimer()
@@ -334,11 +337,11 @@ func BenchmarkNewAzureOpenAIModel_Success(b *testing.B) {
 }
 
 func BenchmarkNewAzureOpenAIModel_WithOptions(b *testing.B) {
-	opts := []types.ModelOption{
-		types.WithAPIKey("test-api-key"),
-		types.WithBaseURL("https://test.openai.azure.com"),
-		types.WithAPIVersion("2024-02-15-preview"),
-		types.WithRequestOptions(
+	opts := []llm.ModelOption{
+		llm.WithAPIKey("test-api-key"),
+		llm.WithBaseURL("https://test.openai.azure.com"),
+		llm.WithAPIVersion("2024-02-15-preview"),
+		llm.WithRequestOptions(
 			option.WithHeader("Custom-Header-1", "value1"),
 			option.WithHeader("Custom-Header-2", "value2"),
 		),
@@ -355,9 +358,9 @@ func BenchmarkNewAzureOpenAIModel_WithOptions(b *testing.B) {
 
 func BenchmarkAzureOpenAIModel_Name(b *testing.B) {
 	model, err := NewAzureOpenAIModel(
-		types.WithAPIKey("test-api-key"),
-		types.WithBaseURL("https://test.openai.azure.com"),
-		types.WithAPIVersion("2024-02-15-preview"),
+		llm.WithAPIKey("test-api-key"),
+		llm.WithBaseURL("https://test.openai.azure.com"),
+		llm.WithAPIVersion("2024-02-15-preview"),
 	)
 	if err != nil {
 		b.Fatal(err)

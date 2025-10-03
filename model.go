@@ -1,7 +1,7 @@
-// Copyright 2025 The Go A2A Authors
+// Copyright 2025 The DeepTask Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package types
+package llm
 
 import (
 	"time"
@@ -50,12 +50,12 @@ type BaseModel interface {
 	SupportedModels() []*ModelInfo
 }
 
-type MessageRole string
+type Role string
 
 const (
-	MessageRoleUser      MessageRole = "user"
-	MessageRoleAssistant MessageRole = "assistant"
-	MessageRoleTool      MessageRole = "tool"
+	RoleUser      Role = "user"
+	RoleAssistant Role = "assistant"
+	RoleTool      Role = "tool"
 )
 
 type EmbeddingEncodingFormat string
@@ -74,8 +74,16 @@ type ModelArtifact struct {
 	Metadata    map[string]string `json:"metadata"`
 }
 
+type ToolCall struct {
+	ID           string
+	Name         string
+	Input        any
+	Output       any
+	ErrorMessage *string
+}
+
 type ModelMessage struct {
-	Role      MessageRole      `json:"role"`
+	Role      Role             `json:"role"`
 	Content   string           `json:"content"`
 	Artifacts []*ModelArtifact `json:"artifacts"`
 	ToolCall  *ToolCall        `json:"toolCall"`

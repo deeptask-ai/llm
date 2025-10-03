@@ -1,14 +1,15 @@
+// Copyright 2025 The DeepTask Authors
+// SPDX-License-Identifier: Apache-2.0
+
 package main
 
 import (
 	"context"
 	"fmt"
-	"github.com/easymvp/easyllm"
-	"github.com/easymvp/easyllm/types/completion"
+	"github.com/deeptask-ai/llm"
+	"github.com/deeptask-ai/llm/internal/providers/deepseek"
 	"log"
 	"os"
-
-	"github.com/easymvp/easyllm/types"
 )
 
 func main() {
@@ -19,8 +20,8 @@ func main() {
 	}
 
 	// Create DeepSeek completion model
-	model, err := easyllm.NewDeepSeekModel(
-		types.WithAPIKey(apiKey),
+	model, err := deepseek.NewDeepSeekModel(
+		llm.WithAPIKey(apiKey),
 	)
 	if err != nil {
 		log.Fatalf("Failed to create DeepSeek model: %v", err)
@@ -30,18 +31,18 @@ func main() {
 
 	// Example 1: Basic streaming
 	fmt.Println("=== Example 1: Basic Streaming ===")
-	req := &completion.CompletionRequest{
+	req := &llm.CompletionRequest{
 		Model:        "deepseek-reasoner",
 		Instructions: "You are a helpful assistant.",
-		Messages: []*types.ModelMessage{
+		Messages: []*llm.ModelMessage{
 			{
-				Role:    types.MessageRoleUser,
+				Role:    llm.RoleUser,
 				Content: "Count from 1 to 5 and explain each number briefly.",
 			},
 		},
 	}
 
-	stream, err := model.StreamComplete(ctx, req, nil)
+	stream, err := model.StreamComplete(ctx, req)
 	if err != nil {
 		log.Fatalf("Stream failed: %v", err)
 	}
@@ -49,9 +50,9 @@ func main() {
 	fmt.Print("Response: ")
 	for chunk := range stream {
 		switch c := chunk.(type) {
-		case types.StreamReasoningChunk:
+		case llm.StreamReasoningChunk:
 			fmt.Print(c.Reasoning)
-		case types.StreamTextChunk:
+		case llm.StreamTextChunk:
 			fmt.Print(c.Text)
 		}
 	}

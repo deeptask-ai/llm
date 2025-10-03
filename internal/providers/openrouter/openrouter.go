@@ -1,10 +1,13 @@
+// Copyright 2025 The DeepTask Authors
+// SPDX-License-Identifier: Apache-2.0
+
 package openrouter
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/easymvp/easyllm/internal/providers/openai"
-	"github.com/easymvp/easyllm/types"
+	"github.com/deeptask-ai/llm"
+	"github.com/deeptask-ai/llm/internal/providers/openai"
 	"net/http"
 
 	"github.com/openai/openai-go/v3/option"
@@ -37,11 +40,11 @@ type OpenRouterModel struct {
 	apiKey string
 }
 
-func NewOpenRouterModel(opts ...types.ModelOption) (*OpenRouterModel, error) {
-	config := types.ApplyOptions(opts)
+func NewOpenRouterModel(opts ...llm.ModelOption) (*OpenRouterModel, error) {
+	config := llm.ApplyOptions(opts)
 
 	if config.APIKey == "" {
-		return nil, types.ErrAPIKeyEmpty
+		return nil, llm.ErrAPIKeyEmpty
 	}
 
 	// Build request options list
@@ -109,14 +112,14 @@ func (p *OpenRouterModel) loadModels() error {
 }
 
 // SupportedModels returns all available models from OpenRouter
-func (p *OpenRouterModel) SupportedModels() []*types.ModelInfo {
-	var models []*types.ModelInfo
+func (p *OpenRouterModel) SupportedModels() []*llm.ModelInfo {
+	var models []*llm.ModelInfo
 
 	for _, model := range p.models {
-		modelInfo := &types.ModelInfo{
+		modelInfo := &llm.ModelInfo{
 			ID:   model.ID,
 			Name: model.Name,
-			Pricing: types.ModelPricing{
+			Pricing: llm.ModelPricing{
 				Prompt:            model.Pricing.Prompt,
 				Completion:        model.Pricing.Completion,
 				Request:           model.Pricing.Request,
@@ -134,16 +137,16 @@ func (p *OpenRouterModel) SupportedModels() []*types.ModelInfo {
 }
 
 // getModelInfo returns the ModelInfo for a given model from OpenRouter's model list
-func (p *OpenRouterModel) getModelInfo(modelID string) *types.ModelInfo {
+func (p *OpenRouterModel) getModelInfo(modelID string) *llm.ModelInfo {
 	openRouterModel, exists := p.models[modelID]
 	if !exists {
 		return nil
 	}
 
-	return &types.ModelInfo{
+	return &llm.ModelInfo{
 		ID:   openRouterModel.ID,
 		Name: openRouterModel.Name,
-		Pricing: types.ModelPricing{
+		Pricing: llm.ModelPricing{
 			Prompt:            openRouterModel.Pricing.Prompt,
 			Completion:        openRouterModel.Pricing.Completion,
 			Request:           openRouterModel.Pricing.Request,

@@ -3,7 +3,7 @@ package deepseek
 import (
 	"testing"
 
-	"github.com/easymvp/easyllm/types"
+	"github.com/deeptask-ai/llm/types"
 	"github.com/openai/openai-go/v3/option"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

@@ -1,14 +1,15 @@
+// Copyright 2025 The DeepTask Authors
+// SPDX-License-Identifier: Apache-2.0
+
 package main
 
 import (
 	"context"
 	"fmt"
-	"github.com/easymvp/easyllm"
-	"github.com/easymvp/easyllm/types/conversation"
+	"github.com/deeptask-ai/llm"
+	"github.com/deeptask-ai/llm/openai"
 	"log"
 	"os"
-
-	"github.com/easymvp/easyllm/types"
 )
 
 func main() {
@@ -19,8 +20,8 @@ func main() {
 	}
 
 	// Create OpenAI completion model
-	model, err := easyllm.NewOpenAIConversationModel(
-		types.WithAPIKey(apiKey),
+	model, err := openai.NewOpenAIConversationModel(
+		llm.WithAPIKey(apiKey),
 	)
 	if err != nil {
 		log.Fatalf("Failed to create OpenAI model: %v", err)
@@ -30,16 +31,18 @@ func main() {
 
 	// Example 1: Basic streaming
 	fmt.Println("=== Example 1: Basic Streaming ===")
-	req := &conversation.ConversationRequest{
+	req := &llm.ConversationRequest{
 		Model: "o4-mini",
 		Input: "You are a helpful assistant.",
-		Options: []conversation.ResponseOption{
-			conversation.WithReasoningEffort(conversation.ReasoningEffortLow),
-			conversation.WithReasoningSummary("concise"),
+		Options: []llm.ResponseOption{
+			llm.WithReasoningSummary("concise"),
+			llm.WithOptions(
+				llm.WithReasoningEffort(llm.ReasoningEffortLow),
+			),
 		},
 	}
 
-	stream, err := model.StreamResponse(ctx, req, nil)
+	stream, err := model.StreamResponse(ctx, req)
 	if err != nil {
 		log.Fatalf("Stream failed: %v", err)
 	}
@@ -47,7 +50,7 @@ func main() {
 	fmt.Print("Response: ")
 	for chunk := range stream {
 		switch c := chunk.(type) {
-		case types.StreamTextChunk:
+		case llm.StreamTextChunk:
 			fmt.Print(c.Text)
 		}
 	}

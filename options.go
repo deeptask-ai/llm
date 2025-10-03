@@ -1,7 +1,7 @@
-// Copyright 2025 The Go A2A Authors
+// Copyright 2025 The DeepTask Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package types
+package llm
 
 import (
 	"github.com/openai/openai-go/v3/option"
@@ -53,7 +53,7 @@ func WithRequestOptions(opts ...option.RequestOption) ModelOption {
 	}
 }
 
-// applyOptions applies all options to create a ModelOptions struct
+// ApplyOptions applies all options to create a ModelOptions struct
 func ApplyOptions(opts []ModelOption) *ModelOptions {
 	options := &ModelOptions{
 		Options: make([]option.RequestOption, 0),

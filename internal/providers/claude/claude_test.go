@@ -1,9 +1,12 @@
+// Copyright 2025 The DeepTask Authors
+// SPDX-License-Identifier: Apache-2.0
+
 package claude
 
 import (
+	"github.com/deeptask-ai/llm"
 	"testing"
 
-	"github.com/easymvp/easyllm/types"
 	"github.com/openai/openai-go/v3/option"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -12,41 +15,41 @@ import (
 func TestNewClaudeModel_Success(t *testing.T) {
 	tests := []struct {
 		name        string
-		opts        []types.ModelOption
+		opts        []llm.ModelOption
 		wantName    string
 		description string
 	}{
 		{
 			name: "basic_configuration",
-			opts: []types.ModelOption{
-				types.WithAPIKey("test-api-key"),
+			opts: []llm.ModelOption{
+				llm.WithAPIKey("test-api-key"),
 			},
 			wantName:    "claude",
 			description: "Should create Claude model with basic configuration",
 		},
 		{
 			name: "with_custom_base_url",
-			opts: []types.ModelOption{
-				types.WithAPIKey("test-api-key"),
-				types.WithBaseURL("https://custom.anthropic.com/v1"),
+			opts: []llm.ModelOption{
+				llm.WithAPIKey("test-api-key"),
+				llm.WithBaseURL("https://custom.anthropic.com/v1"),
 			},
 			wantName:    "claude",
 			description: "Should create Claude model with custom base URL",
 		},
 		{
 			name: "with_custom_request_option",
-			opts: []types.ModelOption{
-				types.WithAPIKey("test-api-key"),
-				types.WithRequestOption(option.WithHeader("Custom-Header", "custom-value")),
+			opts: []llm.ModelOption{
+				llm.WithAPIKey("test-api-key"),
+				llm.WithRequestOption(option.WithHeader("Custom-Header", "custom-value")),
 			},
 			wantName:    "claude",
 			description: "Should create Claude model with custom request options",
 		},
 		{
 			name: "with_multiple_request_options",
-			opts: []types.ModelOption{
-				types.WithAPIKey("test-api-key"),
-				types.WithRequestOptions(
+			opts: []llm.ModelOption{
+				llm.WithAPIKey("test-api-key"),
+				llm.WithRequestOptions(
 					option.WithHeader("Custom-Header-1", "value1"),
 					option.WithHeader("Custom-Header-2", "value2"),
 				),
@@ -56,8 +59,8 @@ func TestNewClaudeModel_Success(t *testing.T) {
 		},
 		{
 			name: "default_base_url",
-			opts: []types.ModelOption{
-				types.WithAPIKey("test-api-key"),
+			opts: []llm.ModelOption{
+				llm.WithAPIKey("test-api-key"),
 			},
 			wantName:    "claude",
 			description: "Should use default Anthropic base URL when not provided",
@@ -79,19 +82,19 @@ func TestNewClaudeModel_Success(t *testing.T) {
 func TestNewClaudeModel_MissingAPIKey(t *testing.T) {
 	tests := []struct {
 		name        string
-		opts        []types.ModelOption
+		opts        []llm.ModelOption
 		description string
 	}{
 		{
 			name: "empty_api_key",
-			opts: []types.ModelOption{
-				types.WithAPIKey(""),
+			opts: []llm.ModelOption{
+				llm.WithAPIKey(""),
 			},
 			description: "Should return error when API key is empty string",
 		},
 		{
 			name:        "no_api_key",
-			opts:        []types.ModelOption{},
+			opts:        []llm.ModelOption{},
 			description: "Should return error when API key is not provided",
 		},
 	}
@@ -101,14 +104,14 @@ func TestNewClaudeModel_MissingAPIKey(t *testing.T) {
 			model, err := NewClaudeModel(tt.opts...)
 
 			assert.Error(t, err, tt.description)
-			assert.ErrorIs(t, err, types.ErrAPIKeyEmpty, "Error should be ErrAPIKeyEmpty")
+			assert.ErrorIs(t, err, llm.ErrAPIKeyEmpty, "Error should be ErrAPIKeyEmpty")
 			assert.Nil(t, model, "Model should be nil when error occurs")
 		})
 	}
 }
 
 func TestClaudeModel_Name(t *testing.T) {
-	model, err := NewClaudeModel(types.WithAPIKey("test-api-key"))
+	model, err := NewClaudeModel(llm.WithAPIKey("test-api-key"))
 
 	require.NoError(t, err)
 	require.NotNil(t, model)
@@ -117,7 +120,7 @@ func TestClaudeModel_Name(t *testing.T) {
 }
 
 func TestClaudeModel_SupportedModels(t *testing.T) {
-	model, err := NewClaudeModel(types.WithAPIKey("test-api-key"))
+	model, err := NewClaudeModel(llm.WithAPIKey("test-api-key"))
 
 	require.NoError(t, err)
 	require.NotNil(t, model)
@@ -128,7 +131,7 @@ func TestClaudeModel_SupportedModels(t *testing.T) {
 }
 
 func TestClaudeModel_ModelStructure(t *testing.T) {
-	model, err := NewClaudeModel(types.WithAPIKey("test-api-key"))
+	model, err := NewClaudeModel(llm.WithAPIKey("test-api-key"))
 
 	require.NoError(t, err)
 	require.NotNil(t, model)
@@ -141,10 +144,10 @@ func TestClaudeModel_ModelStructure(t *testing.T) {
 
 func TestNewClaudeModel_MultipleInstances(t *testing.T) {
 	// Create multiple instances with different configurations
-	model1, err1 := NewClaudeModel(types.WithAPIKey("test-api-key-1"))
+	model1, err1 := NewClaudeModel(llm.WithAPIKey("test-api-key-1"))
 	model2, err2 := NewClaudeModel(
-		types.WithAPIKey("test-api-key-2"),
-		types.WithBaseURL("https://custom.anthropic.com/v1"),
+		llm.WithAPIKey("test-api-key-2"),
+		llm.WithBaseURL("https://custom.anthropic.com/v1"),
 	)
 
 	require.NoError(t, err1)
@@ -159,8 +162,8 @@ func TestNewClaudeModel_MultipleInstances(t *testing.T) {
 
 // Benchmark tests
 func BenchmarkNewClaudeModel_Success(b *testing.B) {
-	opts := []types.ModelOption{
-		types.WithAPIKey("test-api-key"),
+	opts := []llm.ModelOption{
+		llm.WithAPIKey("test-api-key"),
 	}
 
 	b.ResetTimer()
@@ -173,10 +176,10 @@ func BenchmarkNewClaudeModel_Success(b *testing.B) {
 }
 
 func BenchmarkNewClaudeModel_WithOptions(b *testing.B) {
-	opts := []types.ModelOption{
-		types.WithAPIKey("test-api-key"),
-		types.WithBaseURL("https://custom.anthropic.com/v1"),
-		types.WithRequestOptions(
+	opts := []llm.ModelOption{
+		llm.WithAPIKey("test-api-key"),
+		llm.WithBaseURL("https://custom.anthropic.com/v1"),
+		llm.WithRequestOptions(
 			option.WithHeader("Custom-Header-1", "value1"),
 			option.WithHeader("Custom-Header-2", "value2"),
 		),
@@ -192,7 +195,7 @@ func BenchmarkNewClaudeModel_WithOptions(b *testing.B) {
 }
 
 func BenchmarkClaudeModel_Name(b *testing.B) {
-	model, err := NewClaudeModel(types.WithAPIKey("test-api-key"))
+	model, err := NewClaudeModel(llm.WithAPIKey("test-api-key"))
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -204,7 +207,7 @@ func BenchmarkClaudeModel_Name(b *testing.B) {
 }
 
 func BenchmarkClaudeModel_SupportedModels(b *testing.B) {
-	model, err := NewClaudeModel(types.WithAPIKey("test-api-key"))
+	model, err := NewClaudeModel(llm.WithAPIKey("test-api-key"))
 	if err != nil {
 		b.Fatal(err)
 	}

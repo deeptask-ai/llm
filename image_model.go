@@ -1,22 +1,21 @@
-package image
+package llm
 
 import (
 	"context"
-	"github.com/easymvp/easyllm/types"
 )
 
 // ImageModel defines the interface for image generation operations
 type ImageModel interface {
-	types.BaseModel
+	BaseModel
 	// GenerateImage generates images from text prompts
 	GenerateImage(ctx context.Context, req *ImageRequest) (*ImageResponse, error)
 }
 
 type ImageRequest struct {
-	Model        string                 `json:"model"`
-	Instructions string                 `json:"instructions"`
-	Artifacts    []*types.ModelArtifact `json:"artifacts"`
-	Config       *ImageModelConfig      `json:"config,omitempty"`
+	Model        string            `json:"model"`
+	Instructions string            `json:"instructions"`
+	Artifacts    []*ModelArtifact  `json:"artifacts"`
+	Config       *ImageModelConfig `json:"config,omitempty"`
 }
 
 type ImageModelConfig struct {
@@ -27,7 +26,7 @@ type ImageModelConfig struct {
 }
 
 type ImageResponse struct {
-	Output []byte            `json:"output"`
-	Usage  *types.TokenUsage `json:"usage,omitempty"`
-	Cost   *float64          `json:"cost,omitempty"`
+	Output []byte      `json:"output"`
+	Usage  *TokenUsage `json:"usage,omitempty"`
+	Cost   *float64    `json:"cost,omitempty"`
 }

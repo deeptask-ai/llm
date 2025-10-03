@@ -1,9 +1,9 @@
 package gemini
 
 import (
+	"github.com/deeptask-ai/llm"
 	"testing"
 
-	"github.com/easymvp/easyllm/types"
 	"github.com/openai/openai-go/v3/option"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -12,41 +12,41 @@ import (
 func TestNewGeminiModel_Success(t *testing.T) {
 	tests := []struct {
 		name        string
-		opts        []types.ModelOption
+		opts        []llm.ModelOption
 		wantName    string
 		description string
 	}{
 		{
 			name: "basic_configuration",
-			opts: []types.ModelOption{
-				types.WithAPIKey("test-api-key"),
+			opts: []llm.ModelOption{
+				llm.WithAPIKey("test-api-key"),
 			},
 			wantName:    "gemini",
 			description: "Should create Gemini model with basic configuration",
 		},
 		{
 			name: "with_custom_base_url",
-			opts: []types.ModelOption{
-				types.WithAPIKey("test-api-key"),
-				types.WithBaseURL("https://custom.googleapis.com/v1beta/openai/"),
+			opts: []llm.ModelOption{
+				llm.WithAPIKey("test-api-key"),
+				llm.WithBaseURL("https://custom.googleapis.com/v1beta/openai/"),
 			},
 			wantName:    "gemini",
 			description: "Should create Gemini model with custom base URL",
 		},
 		{
 			name: "with_custom_request_option",
-			opts: []types.ModelOption{
-				types.WithAPIKey("test-api-key"),
-				types.WithRequestOption(option.WithHeader("Custom-Header", "custom-value")),
+			opts: []llm.ModelOption{
+				llm.WithAPIKey("test-api-key"),
+				llm.WithRequestOption(option.WithHeader("Custom-Header", "custom-value")),
 			},
 			wantName:    "gemini",
 			description: "Should create Gemini model with custom request options",
 		},
 		{
 			name: "with_multiple_request_options",
-			opts: []types.ModelOption{
-				types.WithAPIKey("test-api-key"),
-				types.WithRequestOptions(
+			opts: []llm.ModelOption{
+				llm.WithAPIKey("test-api-key"),
+				llm.WithRequestOptions(
 					option.WithHeader("Custom-Header-1", "value1"),
 					option.WithHeader("Custom-Header-2", "value2"),
 				),
@@ -56,8 +56,8 @@ func TestNewGeminiModel_Success(t *testing.T) {
 		},
 		{
 			name: "default_base_url",
-			opts: []types.ModelOption{
-				types.WithAPIKey("test-api-key"),
+			opts: []llm.ModelOption{
+				llm.WithAPIKey("test-api-key"),
 			},
 			wantName:    "gemini",
 			description: "Should use default Google AI base URL when not provided",
@@ -79,19 +79,19 @@ func TestNewGeminiModel_Success(t *testing.T) {
 func TestNewGeminiModel_MissingAPIKey(t *testing.T) {
 	tests := []struct {
 		name        string
-		opts        []types.ModelOption
+		opts        []llm.ModelOption
 		description string
 	}{
 		{
 			name: "empty_api_key",
-			opts: []types.ModelOption{
-				types.WithAPIKey(""),
+			opts: []llm.ModelOption{
+				llm.WithAPIKey(""),
 			},
 			description: "Should return error when API key is empty string",
 		},
 		{
 			name:        "no_api_key",
-			opts:        []types.ModelOption{},
+			opts:        []llm.ModelOption{},
 			description: "Should return error when API key is not provided",
 		},
 	}
@@ -101,14 +101,14 @@ func TestNewGeminiModel_MissingAPIKey(t *testing.T) {
 			model, err := NewGeminiModel(tt.opts...)
 
 			assert.Error(t, err, tt.description)
-			assert.ErrorIs(t, err, types.ErrAPIKeyEmpty, "Error should be ErrAPIKeyEmpty")
+			assert.ErrorIs(t, err, llm.ErrAPIKeyEmpty, "Error should be ErrAPIKeyEmpty")
 			assert.Nil(t, model, "Model should be nil when error occurs")
 		})
 	}
 }
 
 func TestGeminiModel_Name(t *testing.T) {
-	model, err := NewGeminiModel(types.WithAPIKey("test-api-key"))
+	model, err := NewGeminiModel(llm.WithAPIKey("test-api-key"))
 
 	require.NoError(t, err)
 	require.NotNil(t, model)
@@ -117,7 +117,7 @@ func TestGeminiModel_Name(t *testing.T) {
 }
 
 func TestGeminiModel_SupportedModels(t *testing.T) {
-	model, err := NewGeminiModel(types.WithAPIKey("test-api-key"))
+	model, err := NewGeminiModel(llm.WithAPIKey("test-api-key"))
 
 	require.NoError(t, err)
 	require.NotNil(t, model)
@@ -128,7 +128,7 @@ func TestGeminiModel_SupportedModels(t *testing.T) {
 }
 
 func TestGeminiModel_ModelStructure(t *testing.T) {
-	model, err := NewGeminiModel(types.WithAPIKey("test-api-key"))
+	model, err := NewGeminiModel(llm.WithAPIKey("test-api-key"))
 
 	require.NoError(t, err)
 	require.NotNil(t, model)
@@ -141,10 +141,10 @@ func TestGeminiModel_ModelStructure(t *testing.T) {
 
 func TestNewGeminiModel_MultipleInstances(t *testing.T) {
 	// Create multiple instances with different configurations
-	model1, err1 := NewGeminiModel(types.WithAPIKey("test-api-key-1"))
+	model1, err1 := NewGeminiModel(llm.WithAPIKey("test-api-key-1"))
 	model2, err2 := NewGeminiModel(
-		types.WithAPIKey("test-api-key-2"),
-		types.WithBaseURL("https://custom.googleapis.com/v1beta/openai/"),
+		llm.WithAPIKey("test-api-key-2"),
+		llm.WithBaseURL("https://custom.googleapis.com/v1beta/openai/"),
 	)
 
 	require.NoError(t, err1)
@@ -159,8 +159,8 @@ func TestNewGeminiModel_MultipleInstances(t *testing.T) {
 
 // Benchmark tests
 func BenchmarkNewGeminiModel_Success(b *testing.B) {
-	opts := []types.ModelOption{
-		types.WithAPIKey("test-api-key"),
+	opts := []llm.ModelOption{
+		llm.WithAPIKey("test-api-key"),
 	}
 
 	b.ResetTimer()
@@ -173,10 +173,10 @@ func BenchmarkNewGeminiModel_Success(b *testing.B) {
 }
 
 func BenchmarkNewGeminiModel_WithOptions(b *testing.B) {
-	opts := []types.ModelOption{
-		types.WithAPIKey("test-api-key"),
-		types.WithBaseURL("https://custom.googleapis.com/v1beta/openai/"),
-		types.WithRequestOptions(
+	opts := []llm.ModelOption{
+		llm.WithAPIKey("test-api-key"),
+		llm.WithBaseURL("https://custom.googleapis.com/v1beta/openai/"),
+		llm.WithRequestOptions(
 			option.WithHeader("Custom-Header-1", "value1"),
 			option.WithHeader("Custom-Header-2", "value2"),
 		),
@@ -192,7 +192,7 @@ func BenchmarkNewGeminiModel_WithOptions(b *testing.B) {
 }
 
 func BenchmarkGeminiModel_Name(b *testing.B) {
-	model, err := NewGeminiModel(types.WithAPIKey("test-api-key"))
+	model, err := NewGeminiModel(llm.WithAPIKey("test-api-key"))
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -204,7 +204,7 @@ func BenchmarkGeminiModel_Name(b *testing.B) {
 }
 
 func BenchmarkGeminiModel_SupportedModels(b *testing.B) {
-	model, err := NewGeminiModel(types.WithAPIKey("test-api-key"))
+	model, err := NewGeminiModel(llm.WithAPIKey("test-api-key"))
 	if err != nil {
 		b.Fatal(err)
 	}

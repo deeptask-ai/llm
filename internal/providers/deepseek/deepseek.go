@@ -1,10 +1,13 @@
+// Copyright 2025 The DeepTask Authors
+// SPDX-License-Identifier: Apache-2.0
+
 package deepseek
 
 import (
 	_ "embed"
 	"encoding/json"
-	"github.com/easymvp/easyllm/internal/providers/openai"
-	"github.com/easymvp/easyllm/types"
+	"github.com/deeptask-ai/llm"
+	"github.com/deeptask-ai/llm/internal/providers/openai"
 	"github.com/openai/openai-go/v3/option"
 )
 
@@ -12,11 +15,11 @@ type DeepSeekModel struct {
 	*openai.OpenAICompletionModel
 }
 
-func NewDeepSeekModel(opts ...types.ModelOption) (*DeepSeekModel, error) {
-	config := types.ApplyOptions(opts)
+func NewDeepSeekModel(opts ...llm.ModelOption) (*DeepSeekModel, error) {
+	config := llm.ApplyOptions(opts)
 
 	if config.APIKey == "" {
-		return nil, types.ErrAPIKeyEmpty
+		return nil, llm.ErrAPIKeyEmpty
 	}
 
 	// Build request options list
@@ -46,8 +49,8 @@ func NewDeepSeekModel(opts ...types.ModelOption) (*DeepSeekModel, error) {
 //go:embed deepseek.json
 var deepSeekModels []byte
 
-func (p *DeepSeekModel) SupportedModels() []*types.ModelInfo {
-	var models []*types.ModelInfo
+func (p *DeepSeekModel) SupportedModels() []*llm.ModelInfo {
+	var models []*llm.ModelInfo
 	if err := json.Unmarshal(deepSeekModels, &models); err != nil {
 		return nil
 	}

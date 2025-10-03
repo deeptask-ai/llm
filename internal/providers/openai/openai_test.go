@@ -1,9 +1,12 @@
+// Copyright 2025 The DeepTask Authors
+// SPDX-License-Identifier: Apache-2.0
+
 package openai
 
 import (
+	"github.com/deeptask-ai/llm"
 	"testing"
 
-	"github.com/easymvp/easyllm/types"
 	"github.com/openai/openai-go/v3/option"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -12,41 +15,41 @@ import (
 func TestNewOpenAIModel_Success(t *testing.T) {
 	tests := []struct {
 		name        string
-		opts        []types.ModelOption
+		opts        []llm.ModelOption
 		wantName    string
 		description string
 	}{
 		{
 			name: "basic_configuration",
-			opts: []types.ModelOption{
-				types.WithAPIKey("test-api-key"),
+			opts: []llm.ModelOption{
+				llm.WithAPIKey("test-api-key"),
 			},
 			wantName:    "openai",
 			description: "Should create OpenAI model with basic configuration",
 		},
 		{
 			name: "with_custom_base_url",
-			opts: []types.ModelOption{
-				types.WithAPIKey("test-api-key"),
-				types.WithBaseURL("https://custom.openai.com/v1"),
+			opts: []llm.ModelOption{
+				llm.WithAPIKey("test-api-key"),
+				llm.WithBaseURL("https://custom.openai.com/v1"),
 			},
 			wantName:    "openai",
 			description: "Should create OpenAI model with custom base URL",
 		},
 		{
 			name: "with_custom_request_option",
-			opts: []types.ModelOption{
-				types.WithAPIKey("test-api-key"),
-				types.WithRequestOption(option.WithHeader("Custom-Header", "custom-value")),
+			opts: []llm.ModelOption{
+				llm.WithAPIKey("test-api-key"),
+				llm.WithRequestOption(option.WithHeader("Custom-Header", "custom-value")),
 			},
 			wantName:    "openai",
 			description: "Should create OpenAI model with custom request options",
 		},
 		{
 			name: "with_multiple_request_options",
-			opts: []types.ModelOption{
-				types.WithAPIKey("test-api-key"),
-				types.WithRequestOptions(
+			opts: []llm.ModelOption{
+				llm.WithAPIKey("test-api-key"),
+				llm.WithRequestOptions(
 					option.WithHeader("Custom-Header-1", "value1"),
 					option.WithHeader("Custom-Header-2", "value2"),
 				),
@@ -73,17 +76,17 @@ func TestNewOpenAIModel_Success(t *testing.T) {
 func TestNewOpenAIModel_MissingAPIKey(t *testing.T) {
 	tests := []struct {
 		name        string
-		opts        []types.ModelOption
+		opts        []llm.ModelOption
 		description string
 	}{
 		{
 			name:        "empty_api_key",
-			opts:        []types.ModelOption{types.WithAPIKey("")},
+			opts:        []llm.ModelOption{llm.WithAPIKey("")},
 			description: "Should return error when API key is empty string",
 		},
 		{
 			name:        "no_api_key",
-			opts:        []types.ModelOption{},
+			opts:        []llm.ModelOption{},
 			description: "Should return error when API key is not provided",
 		},
 	}
@@ -93,14 +96,14 @@ func TestNewOpenAIModel_MissingAPIKey(t *testing.T) {
 			model, err := NewOpenAIModel(tt.opts...)
 
 			assert.Error(t, err, tt.description)
-			assert.ErrorIs(t, err, types.ErrAPIKeyEmpty, "Error should be ErrAPIKeyEmpty")
+			assert.ErrorIs(t, err, llm.ErrAPIKeyEmpty, "Error should be ErrAPIKeyEmpty")
 			assert.Nil(t, model, "Model should be nil when error occurs")
 		})
 	}
 }
 
 func TestOpenAIModel_Name(t *testing.T) {
-	model, err := NewOpenAIModel(types.WithAPIKey("test-api-key"))
+	model, err := NewOpenAIModel(llm.WithAPIKey("test-api-key"))
 
 	require.NoError(t, err)
 	require.NotNil(t, model)
@@ -109,7 +112,7 @@ func TestOpenAIModel_Name(t *testing.T) {
 }
 
 func TestOpenAIModel_ModelStructure(t *testing.T) {
-	model, err := NewOpenAIModel(types.WithAPIKey("test-api-key"))
+	model, err := NewOpenAIModel(llm.WithAPIKey("test-api-key"))
 
 	require.NoError(t, err)
 	require.NotNil(t, model)
@@ -131,7 +134,7 @@ func TestOpenAIModel_ModelStructure(t *testing.T) {
 }
 
 func TestOpenAIModel_SupportedModels(t *testing.T) {
-	model, err := NewOpenAIModel(types.WithAPIKey("test-api-key"))
+	model, err := NewOpenAIModel(llm.WithAPIKey("test-api-key"))
 
 	require.NoError(t, err)
 	require.NotNil(t, model)
@@ -143,8 +146,8 @@ func TestOpenAIModel_SupportedModels(t *testing.T) {
 
 func TestOpenAIModel_MultipleInstances(t *testing.T) {
 	// Create multiple instances with different configurations
-	model1, err1 := NewOpenAIModel(types.WithAPIKey("test-api-key-1"))
-	model2, err2 := NewOpenAIModel(types.WithAPIKey("test-api-key-2"))
+	model1, err1 := NewOpenAIModel(llm.WithAPIKey("test-api-key-1"))
+	model2, err2 := NewOpenAIModel(llm.WithAPIKey("test-api-key-2"))
 
 	require.NoError(t, err1)
 	require.NoError(t, err2)
@@ -170,7 +173,7 @@ func TestNewOpenAIBaseModel_MissingAPIKey(t *testing.T) {
 	model, err := NewOpenAIBaseModel("")
 
 	assert.Error(t, err)
-	assert.ErrorIs(t, err, types.ErrAPIKeyEmpty)
+	assert.ErrorIs(t, err, llm.ErrAPIKeyEmpty)
 	assert.Nil(t, model)
 }
 
@@ -200,7 +203,7 @@ func TestNewOpenAICompletionModel_MissingAPIKey(t *testing.T) {
 	model, err := NewOpenAICompletionModel("")
 
 	assert.Error(t, err)
-	assert.ErrorIs(t, err, types.ErrAPIKeyEmpty)
+	assert.ErrorIs(t, err, llm.ErrAPIKeyEmpty)
 	assert.Nil(t, model)
 }
 
@@ -216,7 +219,7 @@ func TestNewOpenAIEmbeddingModel_MissingAPIKey(t *testing.T) {
 	model, err := NewOpenAIEmbeddingModel("")
 
 	assert.Error(t, err)
-	assert.ErrorIs(t, err, types.ErrAPIKeyEmpty)
+	assert.ErrorIs(t, err, llm.ErrAPIKeyEmpty)
 	assert.Nil(t, model)
 }
 
@@ -232,14 +235,14 @@ func TestNewOpenAIImageModel_MissingAPIKey(t *testing.T) {
 	model, err := NewOpenAIImageModel("")
 
 	assert.Error(t, err)
-	assert.ErrorIs(t, err, types.ErrAPIKeyEmpty)
+	assert.ErrorIs(t, err, llm.ErrAPIKeyEmpty)
 	assert.Nil(t, model)
 }
 
 // Benchmark tests
 func BenchmarkNewOpenAIModel_Success(b *testing.B) {
-	opts := []types.ModelOption{
-		types.WithAPIKey("test-api-key"),
+	opts := []llm.ModelOption{
+		llm.WithAPIKey("test-api-key"),
 	}
 
 	b.ResetTimer()
@@ -252,10 +255,10 @@ func BenchmarkNewOpenAIModel_Success(b *testing.B) {
 }
 
 func BenchmarkNewOpenAIModel_WithOptions(b *testing.B) {
-	opts := []types.ModelOption{
-		types.WithAPIKey("test-api-key"),
-		types.WithBaseURL("https://custom.openai.com/v1"),
-		types.WithRequestOptions(
+	opts := []llm.ModelOption{
+		llm.WithAPIKey("test-api-key"),
+		llm.WithBaseURL("https://custom.openai.com/v1"),
+		llm.WithRequestOptions(
 			option.WithHeader("Custom-Header-1", "value1"),
 			option.WithHeader("Custom-Header-2", "value2"),
 		),
@@ -271,7 +274,7 @@ func BenchmarkNewOpenAIModel_WithOptions(b *testing.B) {
 }
 
 func BenchmarkOpenAIModel_Name(b *testing.B) {
-	model, err := NewOpenAIModel(types.WithAPIKey("test-api-key"))
+	model, err := NewOpenAIModel(llm.WithAPIKey("test-api-key"))
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -283,7 +286,7 @@ func BenchmarkOpenAIModel_Name(b *testing.B) {
 }
 
 func BenchmarkOpenAIModel_SupportedModels(b *testing.B) {
-	model, err := NewOpenAIModel(types.WithAPIKey("test-api-key"))
+	model, err := NewOpenAIModel(llm.WithAPIKey("test-api-key"))
 	if err != nil {
 		b.Fatal(err)
 	}

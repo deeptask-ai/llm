@@ -1,14 +1,16 @@
+// Copyright 2025 The DeepTask Authors
+// SPDX-License-Identifier: Apache-2.0
+
 package main
 
 import (
 	"context"
 	"fmt"
-	"github.com/easymvp/easyllm/types/completion"
+	"github.com/deeptask-ai/llm/openai"
 	"log"
 	"os"
 
-	"github.com/easymvp/easyllm"
-	"github.com/easymvp/easyllm/types"
+	"github.com/deeptask-ai/llm"
 )
 
 func main() {
@@ -19,8 +21,8 @@ func main() {
 	}
 
 	// Create OpenAI model client
-	model, err := easyllm.NewOpenAIModel(
-		types.WithAPIKey(apiKey),
+	model, err := openai.NewOpenAIModel(
+		llm.WithAPIKey(apiKey),
 	)
 	if err != nil {
 		log.Fatalf("Failed to create OpenAI model: %v", err)
@@ -30,22 +32,22 @@ func main() {
 
 	// Example: Basic completion with cost tracking enabled
 	fmt.Println("=== OpenAI Completion with Cost Tracking ===")
-	req := &completion.CompletionRequest{
+	req := &llm.CompletionRequest{
 		Model:        "gpt-4o-mini",
 		Instructions: "You are a helpful assistant.",
-		Messages: []*types.ModelMessage{
+		Messages: []*llm.ModelMessage{
 			{
-				Role:    types.MessageRoleUser,
+				Role:    llm.RoleUser,
 				Content: "What is the capital of France?",
 			},
 		},
-		Options: []completion.CompletionOption{
-			completion.WithCost(true),
-			completion.WithUsage(true),
+		Options: []llm.CompletionOption{
+			llm.WithCost(true),
+			llm.WithUsage(true),
 		},
 	}
 
-	resp, err := model.Complete(ctx, req, nil)
+	resp, err := model.Complete(ctx, req)
 	if err != nil {
 		log.Fatalf("Completion failed: %v", err)
 	}

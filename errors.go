@@ -1,7 +1,7 @@
-// Copyright 2025 The Go A2A Authors
+// Copyright 2025 The DeepTask Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package types
+package llm
 
 import (
 	"errors"

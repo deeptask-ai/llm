@@ -1,8 +1,11 @@
+// Copyright 2025 The DeepTask Authors
+// SPDX-License-Identifier: Apache-2.0
+
 package azure
 
 import (
-	"github.com/easymvp/easyllm/internal/providers/openai"
-	"github.com/easymvp/easyllm/types"
+	"github.com/deeptask-ai/llm"
+	"github.com/deeptask-ai/llm/internal/providers/openai"
 	"github.com/openai/openai-go/v3/option"
 )
 
@@ -10,17 +13,17 @@ type AzureOpenAIModel struct {
 	*openai.OpenAIModel
 }
 
-func NewAzureOpenAIModel(opts ...types.ModelOption) (*AzureOpenAIModel, error) {
-	config := types.ApplyOptions(opts)
+func NewAzureOpenAIModel(opts ...llm.ModelOption) (*AzureOpenAIModel, error) {
+	config := llm.ApplyOptions(opts)
 
 	if config.APIKey == "" {
-		return nil, types.ErrAPIKeyEmpty
+		return nil, llm.ErrAPIKeyEmpty
 	}
 	if config.BaseURL == "" {
-		return nil, types.ErrBaseURLEmpty
+		return nil, llm.ErrBaseURLEmpty
 	}
 	if config.APIVersion == "" {
-		return nil, types.ErrAPIVersionEmpty
+		return nil, llm.ErrAPIVersionEmpty
 	}
 
 	// Build request options list

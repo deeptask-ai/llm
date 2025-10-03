@@ -1,10 +1,13 @@
+// Copyright 2025 The DeepTask Authors
+// SPDX-License-Identifier: Apache-2.0
+
 package gemini
 
 import (
 	_ "embed"
 	"encoding/json"
-	"github.com/easymvp/easyllm/internal/providers/openai"
-	"github.com/easymvp/easyllm/types"
+	"github.com/deeptask-ai/llm"
+	"github.com/deeptask-ai/llm/internal/providers/openai"
 	"github.com/openai/openai-go/v3/option"
 )
 
@@ -12,11 +15,11 @@ type GeminiModel struct {
 	*openai.OpenAICompletionModel
 }
 
-func NewGeminiModel(opts ...types.ModelOption) (*GeminiModel, error) {
-	config := types.ApplyOptions(opts)
+func NewGeminiModel(opts ...llm.ModelOption) (*GeminiModel, error) {
+	config := llm.ApplyOptions(opts)
 
 	if config.APIKey == "" {
-		return nil, types.ErrAPIKeyEmpty
+		return nil, llm.ErrAPIKeyEmpty
 	}
 
 	// Build request options list
@@ -46,8 +49,8 @@ func NewGeminiModel(opts ...types.ModelOption) (*GeminiModel, error) {
 //go:embed gemini.json
 var geminiModels []byte
 
-func (p *GeminiModel) SupportedModels() []*types.ModelInfo {
-	var models []*types.ModelInfo
+func (p *GeminiModel) SupportedModels() []*llm.ModelInfo {
+	var models []*llm.ModelInfo
 	if err := json.Unmarshal(geminiModels, &models); err != nil {
 		return nil
 	}

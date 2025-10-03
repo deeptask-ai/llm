@@ -9,12 +9,12 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/deeptask-ai/llm"
+	"github.com/easymvp-ai/llm"
 	"github.com/openai/openai-go/v3/shared"
 	"strconv"
 	"sync"
 
-	"github.com/deeptask-ai/llm/internal/common"
+	"github.com/easymvp-ai/llm/internal/common"
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/responses"
 

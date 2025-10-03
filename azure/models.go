@@ -4,8 +4,8 @@
 package azure
 
 import (
-	"github.com/deeptask-ai/llm"
-	"github.com/deeptask-ai/llm/internal/providers/azure"
+	"github.com/easymvp-ai/llm"
+	"github.com/easymvp-ai/llm/internal/providers/azure"
 )
 
 // NewAzureOpenAIModel creates a new Azure OpenAI model that supports llm, embedding, and image generation

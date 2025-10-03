@@ -4,8 +4,8 @@
 package azure
 
 import (
-	"github.com/deeptask-ai/llm"
-	"github.com/deeptask-ai/llm/internal/providers/openai"
+	"github.com/easymvp-ai/llm"
+	"github.com/easymvp-ai/llm/internal/providers/openai"
 	"github.com/openai/openai-go/v3/option"
 )
 

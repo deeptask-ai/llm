@@ -1,4 +1,4 @@
-module github.com/deeptask-ai/llm
+module github.com/easymvp-ai/llm
 
 go 1.24.4
 

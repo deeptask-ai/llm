@@ -4,7 +4,7 @@
 package openai
 
 import (
-	"github.com/deeptask-ai/llm"
+	"github.com/easymvp-ai/llm"
 	"testing"
 
 	"github.com/openai/openai-go/v3/option"

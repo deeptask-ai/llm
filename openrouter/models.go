@@ -4,8 +4,8 @@
 package openrouter
 
 import (
-	"github.com/deeptask-ai/llm"
-	"github.com/deeptask-ai/llm/internal/providers/openrouter"
+	"github.com/easymvp-ai/llm"
+	"github.com/easymvp-ai/llm/internal/providers/openrouter"
 )
 
 // NewOpenRouterModel creates a new OpenRouter model that supports llm

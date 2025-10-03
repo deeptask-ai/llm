@@ -6,11 +6,11 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/deeptask-ai/llm/openai"
+	"github.com/easymvp-ai/llm/openai"
 	"log"
 	"os"
 
-	"github.com/deeptask-ai/llm"
+	"github.com/easymvp-ai/llm"
 )
 
 func main() {

@@ -4,8 +4,8 @@
 package gemini
 
 import (
-	"github.com/deeptask-ai/llm"
-	"github.com/deeptask-ai/llm/internal/providers/gemini"
+	"github.com/easymvp-ai/llm"
+	"github.com/easymvp-ai/llm/internal/providers/gemini"
 )
 
 // NewGeminiModel creates a new Gemini model that supports llm

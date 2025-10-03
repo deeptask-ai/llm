@@ -7,7 +7,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/deeptask-ai/llm"
+	"github.com/easymvp-ai/llm"
 	"strconv"
 	"sync"
 	"text/template"

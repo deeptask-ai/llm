@@ -1,9 +1,9 @@
 package deepseek
 
 import (
+	"github.com/easymvp-ai/llm"
 	"testing"
 
-	"github.com/deeptask-ai/llm/types"
 	"github.com/openai/openai-go/v3/option"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -12,41 +12,41 @@ import (
 func TestNewDeepSeekModel_Success(t *testing.T) {
 	tests := []struct {
 		name        string
-		opts        []types.ModelOption
+		opts        []llm.ModelOption
 		wantName    string
 		description string
 	}{
 		{
 			name: "basic_configuration",
-			opts: []types.ModelOption{
-				types.WithAPIKey("test-api-key"),
+			opts: []llm.ModelOption{
+				llm.WithAPIKey("test-api-key"),
 			},
 			wantName:    "deepseek",
 			description: "Should create DeepSeek model with basic configuration",
 		},
 		{
 			name: "with_custom_base_url",
-			opts: []types.ModelOption{
-				types.WithAPIKey("test-api-key"),
-				types.WithBaseURL("https://custom.deepseek.com/"),
+			opts: []llm.ModelOption{
+				llm.WithAPIKey("test-api-key"),
+				llm.WithBaseURL("https://custom.deepseek.com/"),
 			},
 			wantName:    "deepseek",
 			description: "Should create DeepSeek model with custom base URL",
 		},
 		{
 			name: "with_custom_request_option",
-			opts: []types.ModelOption{
-				types.WithAPIKey("test-api-key"),
-				types.WithRequestOption(option.WithHeader("Custom-Header", "custom-value")),
+			opts: []llm.ModelOption{
+				llm.WithAPIKey("test-api-key"),
+				llm.WithRequestOption(option.WithHeader("Custom-Header", "custom-value")),
 			},
 			wantName:    "deepseek",
 			description: "Should create DeepSeek model with custom request options",
 		},
 		{
 			name: "with_multiple_request_options",
-			opts: []types.ModelOption{
-				types.WithAPIKey("test-api-key"),
-				types.WithRequestOptions(
+			opts: []llm.ModelOption{
+				llm.WithAPIKey("test-api-key"),
+				llm.WithRequestOptions(
 					option.WithHeader("Custom-Header-1", "value1"),
 					option.WithHeader("Custom-Header-2", "value2"),
 				),
@@ -56,8 +56,8 @@ func TestNewDeepSeekModel_Success(t *testing.T) {
 		},
 		{
 			name: "default_base_url",
-			opts: []types.ModelOption{
-				types.WithAPIKey("test-api-key"),
+			opts: []llm.ModelOption{
+				llm.WithAPIKey("test-api-key"),
 			},
 			wantName:    "deepseek",
 			description: "Should use default DeepSeek base URL when not provided",
@@ -79,19 +79,19 @@ func TestNewDeepSeekModel_Success(t *testing.T) {
 func TestNewDeepSeekModel_MissingAPIKey(t *testing.T) {
 	tests := []struct {
 		name        string
-		opts        []types.ModelOption
+		opts        []llm.ModelOption
 		description string
 	}{
 		{
 			name: "empty_api_key",
-			opts: []types.ModelOption{
-				types.WithAPIKey(""),
+			opts: []llm.ModelOption{
+				llm.WithAPIKey(""),
 			},
 			description: "Should return error when API key is empty string",
 		},
 		{
 			name:        "no_api_key",
-			opts:        []types.ModelOption{},
+			opts:        []llm.ModelOption{},
 			description: "Should return error when API key is not provided",
 		},
 	}
@@ -101,14 +101,14 @@ func TestNewDeepSeekModel_MissingAPIKey(t *testing.T) {
 			model, err := NewDeepSeekModel(tt.opts...)
 
 			assert.Error(t, err, tt.description)
-			assert.ErrorIs(t, err, types.ErrAPIKeyEmpty, "Error should be ErrAPIKeyEmpty")
+			assert.ErrorIs(t, err, llm.ErrAPIKeyEmpty, "Error should be ErrAPIKeyEmpty")
 			assert.Nil(t, model, "Model should be nil when error occurs")
 		})
 	}
 }
 
 func TestDeepSeekModel_Name(t *testing.T) {
-	model, err := NewDeepSeekModel(types.WithAPIKey("test-api-key"))
+	model, err := NewDeepSeekModel(llm.WithAPIKey("test-api-key"))
 
 	require.NoError(t, err)
 	require.NotNil(t, model)
@@ -117,7 +117,7 @@ func TestDeepSeekModel_Name(t *testing.T) {
 }
 
 func TestDeepSeekModel_SupportedModels(t *testing.T) {
-	model, err := NewDeepSeekModel(types.WithAPIKey("test-api-key"))
+	model, err := NewDeepSeekModel(llm.WithAPIKey("test-api-key"))
 
 	require.NoError(t, err)
 	require.NotNil(t, model)
@@ -128,7 +128,7 @@ func TestDeepSeekModel_SupportedModels(t *testing.T) {
 }
 
 func TestDeepSeekModel_ModelStructure(t *testing.T) {
-	model, err := NewDeepSeekModel(types.WithAPIKey("test-api-key"))
+	model, err := NewDeepSeekModel(llm.WithAPIKey("test-api-key"))
 
 	require.NoError(t, err)
 	require.NotNil(t, model)
@@ -141,10 +141,10 @@ func TestDeepSeekModel_ModelStructure(t *testing.T) {
 
 func TestNewDeepSeekModel_MultipleInstances(t *testing.T) {
 	// Create multiple instances with different configurations
-	model1, err1 := NewDeepSeekModel(types.WithAPIKey("test-api-key-1"))
+	model1, err1 := NewDeepSeekModel(llm.WithAPIKey("test-api-key-1"))
 	model2, err2 := NewDeepSeekModel(
-		types.WithAPIKey("test-api-key-2"),
-		types.WithBaseURL("https://custom.deepseek.com/"),
+		llm.WithAPIKey("test-api-key-2"),
+		llm.WithBaseURL("https://custom.deepseek.com/"),
 	)
 
 	require.NoError(t, err1)
@@ -159,8 +159,8 @@ func TestNewDeepSeekModel_MultipleInstances(t *testing.T) {
 
 // Benchmark tests
 func BenchmarkNewDeepSeekModel_Success(b *testing.B) {
-	opts := []types.ModelOption{
-		types.WithAPIKey("test-api-key"),
+	opts := []llm.ModelOption{
+		llm.WithAPIKey("test-api-key"),
 	}
 
 	b.ResetTimer()
@@ -173,10 +173,10 @@ func BenchmarkNewDeepSeekModel_Success(b *testing.B) {
 }
 
 func BenchmarkNewDeepSeekModel_WithOptions(b *testing.B) {
-	opts := []types.ModelOption{
-		types.WithAPIKey("test-api-key"),
-		types.WithBaseURL("https://custom.deepseek.com/"),
-		types.WithRequestOptions(
+	opts := []llm.ModelOption{
+		llm.WithAPIKey("test-api-key"),
+		llm.WithBaseURL("https://custom.deepseek.com/"),
+		llm.WithRequestOptions(
 			option.WithHeader("Custom-Header-1", "value1"),
 			option.WithHeader("Custom-Header-2", "value2"),
 		),
@@ -192,7 +192,7 @@ func BenchmarkNewDeepSeekModel_WithOptions(b *testing.B) {
 }
 
 func BenchmarkDeepSeekModel_Name(b *testing.B) {
-	model, err := NewDeepSeekModel(types.WithAPIKey("test-api-key"))
+	model, err := NewDeepSeekModel(llm.WithAPIKey("test-api-key"))
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -204,7 +204,7 @@ func BenchmarkDeepSeekModel_Name(b *testing.B) {
 }
 
 func BenchmarkDeepSeekModel_SupportedModels(b *testing.B) {
-	model, err := NewDeepSeekModel(types.WithAPIKey("test-api-key"))
+	model, err := NewDeepSeekModel(llm.WithAPIKey("test-api-key"))
 	if err != nil {
 		b.Fatal(err)
 	}

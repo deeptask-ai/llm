@@ -4,8 +4,8 @@
 package openai
 
 import (
-	"github.com/deeptask-ai/llm"
-	"github.com/deeptask-ai/llm/internal/providers/openai"
+	"github.com/easymvp-ai/llm"
+	"github.com/easymvp-ai/llm/internal/providers/openai"
 )
 
 // NewOpenAIModel creates a new OpenAI model that supports llm, embedding, and image generation

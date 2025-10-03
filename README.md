@@ -4,7 +4,7 @@ A unified Go client library for interacting with multiple Large Language Model (
 
 [![Go Version](https://img.shields.io/badge/Go-1.24.4+-blue.svg)](https://golang.org)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Go Report Card](https://goreportcard.com/badge/github.com/deeptask-ai/llm)](https://goreportcard.com/report/github.com/deeptask-ai/llm)
+[![Go Report Card](https://goreportcard.com/badge/github.com/easymvp-ai/llm)](https://goreportcard.com/report/github.com/easymvp-ai/llm)
 
 ## Features
 
@@ -39,7 +39,7 @@ A unified Go client library for interacting with multiple Large Language Model (
 ## Installation
 
 ```bash
-go get github.com/deeptask-ai/llm
+go get github.com/easymvp-ai/llm
 ```
 
 ## Quick Start
@@ -54,9 +54,9 @@ import (
     "fmt"
     "log"
 
-    "github.com/deeptask-ai/llm"
-    "github.com/deeptask-ai/llm/types"
-    "github.com/deeptask-ai/llm/types/completion"
+    "github.com/easymvp-ai/llm"
+    "github.com/easymvp-ai/llm/types"
+    "github.com/easymvp-ai/llm/types/completion"
 )
 
 func main() {
@@ -369,7 +369,7 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/deeptask-ai/llm.git
+git clone https://github.com/easymvp-ai/llm.git
 cd llm
 ```
 
@@ -406,9 +406,9 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 ## Support
 
-- 📖 [Documentation](https://github.com/deeptask-ai/llm/wiki)
-- 🐛 [Issue Tracker](https://github.com/deeptask-ai/llm/issues)
-- 💬 [Discussions](https://github.com/deeptask-ai/llm/discussions)
+- 📖 [Documentation](https://github.com/easymvp-ai/llm/wiki)
+- 🐛 [Issue Tracker](https://github.com/easymvp-ai/llm/issues)
+- 💬 [Discussions](https://github.com/easymvp-ai/llm/discussions)
 
 ## Roadmap
 
@@ -421,4 +421,4 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 ---
 
-Made with ❤️ by the [EasyMVP](https://github.com/deeptask-ai) team
+Made with ❤️ by the [EasyMVP](https://github.com/easymvp-ai) team

@@ -6,8 +6,8 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/deeptask-ai/llm"
-	"github.com/deeptask-ai/llm/internal/providers/deepseek"
+	"github.com/easymvp-ai/llm"
+	"github.com/easymvp-ai/llm/internal/providers/deepseek"
 	"log"
 	"os"
 )

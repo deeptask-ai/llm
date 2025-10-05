@@ -6,10 +6,11 @@ package openrouter
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"strconv"
+
 	"github.com/easyagent-dev/llm"
 	"github.com/easyagent-dev/llm/internal/providers/openai"
-	"net/http"
-
 	"github.com/openai/openai-go/v3/option"
 )
 
@@ -110,22 +111,37 @@ func loadModels(apiKey string) ([]*llm.ModelInfo, error) {
 	var models []*llm.ModelInfo
 
 	for _, model := range modelsResponse.Data {
+		// Parse pricing strings to float64
+		pricing := llm.ModelPricing{
+			Prompt:            parsePrice(model.Pricing.Prompt),
+			Completion:        parsePrice(model.Pricing.Completion),
+			Request:           parsePrice(model.Pricing.Request),
+			Image:             parsePrice(model.Pricing.Image),
+			WebSearch:         parsePrice(model.Pricing.WebSearch),
+			InternalReasoning: parsePrice(model.Pricing.InternalReasoning),
+			InputCacheRead:    parsePrice(model.Pricing.InputCacheRead),
+			InputCacheWrite:   parsePrice(model.Pricing.InputCacheWrite),
+		}
+
 		modelInfo := &llm.ModelInfo{
-			ID:   model.ID,
-			Name: model.Name,
-			Pricing: llm.ModelPricing{
-				Prompt:            model.Pricing.Prompt,
-				Completion:        model.Pricing.Completion,
-				Request:           model.Pricing.Request,
-				Image:             model.Pricing.Image,
-				WebSearch:         model.Pricing.WebSearch,
-				InternalReasoning: model.Pricing.InternalReasoning,
-				InputCacheRead:    model.Pricing.InputCacheRead,
-				InputCacheWrite:   model.Pricing.InputCacheWrite,
-			},
+			ID:      model.ID,
+			Name:    model.Name,
+			Pricing: pricing,
 		}
 		models = append(models, modelInfo)
 	}
 
 	return models, nil
+}
+
+// parsePrice converts a price string to float64, returning 0 if empty or invalid
+func parsePrice(price string) float64 {
+	if price == "" {
+		return 0.0
+	}
+	val, err := strconv.ParseFloat(price, 64)
+	if err != nil {
+		return 0.0
+	}
+	return val
 }

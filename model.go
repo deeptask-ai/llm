@@ -31,15 +31,16 @@ type ModelInfo struct {
 }
 
 // ModelPricing contains pricing information for various model operations
+// All prices are in USD
 type ModelPricing struct {
-	Prompt            string `json:"prompt"`            // Price per million input tokens
-	Completion        string `json:"completion"`        // Price per million output tokens
-	Request           string `json:"request"`           // Price per request (if applicable)
-	Image             string `json:"image"`             // Price per image generation
-	WebSearch         string `json:"webSearch"`         // Price per web search operation
-	InternalReasoning string `json:"internalReasoning"` // Price per million reasoning tokens
-	InputCacheRead    string `json:"inputCacheRead"`    // Price per million cached input tokens read
-	InputCacheWrite   string `json:"inputCacheWrite"`   // Price per million cached input tokens written
+	Prompt            float64 `json:"prompt"`            // Price per million input tokens
+	Completion        float64 `json:"completion"`        // Price per million output tokens
+	Request           float64 `json:"request"`           // Price per request (if applicable)
+	Image             float64 `json:"image"`             // Price per image generation
+	WebSearch         float64 `json:"webSearch"`         // Price per web search operation
+	InternalReasoning float64 `json:"internalReasoning"` // Price per million reasoning tokens
+	InputCacheRead    float64 `json:"inputCacheRead"`    // Price per million cached input tokens read
+	InputCacheWrite   float64 `json:"inputCacheWrite"`   // Price per million cached input tokens written
 }
 
 type Role string

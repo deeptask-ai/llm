@@ -36,9 +36,9 @@ func main() {
 			Size: "1024x1024",
 		},
 	}
-	model, err := provider.NewImageModelModel("black-forest-labs/flux-1.1-pro")
+	model, err := provider.NewImageModel("black-forest-labs/flux-1.1-pro")
 	if err != nil {
-		log.Fatalf("Failed to create DeepSeek model: %v", err)
+		log.Fatalf("Failed to create image model: %v", err)
 	}
 	fmt.Println("Sending request to Replicate...")
 	resp, err := model.GenerateImage(ctx, req)

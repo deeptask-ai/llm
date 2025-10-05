@@ -10,18 +10,36 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
+	"sync"
+
 	"github.com/easyagent-dev/llm"
 	"github.com/easyagent-dev/llm/internal/common"
 	"github.com/openai/openai-go/v3"
+	"github.com/openai/openai-go/v3/option"
 	"github.com/openai/openai-go/v3/responses"
 	"github.com/openai/openai-go/v3/shared"
-	"strconv"
-
-	"github.com/openai/openai-go/v3/option"
 )
 
 //go:embed openai.json
 var openaiModels []byte
+
+var (
+	openaiModelsOnce sync.Once
+	openaiModelsList []*llm.ModelInfo
+	openaiModelsErr  error
+)
+
+// getOpenAIModels returns the parsed model list, unmarshaling only once
+func getOpenAIModels() ([]*llm.ModelInfo, error) {
+	openaiModelsOnce.Do(func() {
+		openaiModelsErr = json.Unmarshal(openaiModels, &openaiModelsList)
+		if openaiModelsErr != nil {
+			openaiModelsErr = fmt.Errorf("failed to unmarshal OpenAI models: %w", openaiModelsErr)
+		}
+	})
+	return openaiModelsList, openaiModelsErr
+}
 
 // OpenAIModelProvider provides base functionality for OpenAI models
 type OpenAIModelProvider struct {
@@ -32,9 +50,9 @@ type OpenAIModelProvider struct {
 var _ llm.ModelProvider = (*OpenAIModelProvider)(nil)
 
 func NewOpenAIModelProvider(opts ...llm.ModelOption) (*OpenAIModelProvider, error) {
-	var models []*llm.ModelInfo
-	if err := json.Unmarshal(openaiModels, &models); err != nil {
-		return nil, errors.New("failed to read model info")
+	models, err := getOpenAIModels()
+	if err != nil {
+		return nil, err
 	}
 	config := llm.ApplyOptions(opts)
 	requestOpts := []option.RequestOption{}
@@ -113,7 +131,7 @@ func (p *OpenAICompletionModel) StreamComplete(ctx context.Context, req *llm.Com
 	}
 
 	stream := p.client.Chat.Completions.NewStreaming(ctx, params)
-	chunkChan := make(chan llm.StreamChunk, 10) // Increased buffer to reduce blocking
+	chunkChan := make(chan llm.StreamChunk, 1) // Increased buffer to reduce blocking
 
 	go func() {
 		defer close(chunkChan)
@@ -434,15 +452,12 @@ func (p *OpenAIImageModel) GenerateImage(ctx context.Context, req *llm.ImageRequ
 		TotalRequests: 1,
 	}
 
-	// Calculate cost if requested - llm generation has fixed pricing
+	// Calculate cost if requested - image generation has fixed pricing
 	var cost *float64
-	if req.Config != nil {
-		if p.modelInfo != nil {
-			llmPrice, err := strconv.ParseFloat(p.modelInfo.Pricing.Image, 64)
-			if err == nil {
-				totalCost := llmPrice
-				cost = &totalCost
-			}
+	if req.Config != nil && p.modelInfo != nil {
+		if p.modelInfo.Pricing.Image > 0 {
+			totalCost := p.modelInfo.Pricing.Image
+			cost = &totalCost
 		}
 	}
 
@@ -480,7 +495,7 @@ func (p *OpenAIConversationModel) StreamResponse(ctx context.Context, req *llm.C
 	}
 
 	stream := p.client.Responses.NewStreaming(ctx, params)
-	chunkChan := make(chan llm.StreamChunk, 10)
+	chunkChan := make(chan llm.StreamChunk, 1)
 
 	go func() {
 		defer close(chunkChan)
@@ -679,14 +694,22 @@ func ToChatCompletionMessage(msg *llm.ModelMessage) (openai.ChatCompletionMessag
 		if err != nil {
 			return openai.AssistantMessage(""), fmt.Errorf("failed to marshal tool call: %w", err)
 		}
-		return openai.AssistantMessage("call tool: ```" + string(jsonBytes) + "```"), nil
+		var sb strings.Builder
+		sb.WriteString("call tool: ```")
+		sb.Write(jsonBytes)
+		sb.WriteString("```")
+		return openai.AssistantMessage(sb.String()), nil
 
 	case llm.RoleTool:
 		jsonBytes, err := json.Marshal(msg.ToolCall)
 		if err != nil {
 			return openai.UserMessage(""), fmt.Errorf("failed to marshal tool call results: %w", err)
 		}
-		return openai.UserMessage("call tool results: ```" + string(jsonBytes) + "```"), nil
+		var sb strings.Builder
+		sb.WriteString("call tool results: ```")
+		sb.Write(jsonBytes)
+		sb.WriteString("```")
+		return openai.UserMessage(sb.String()), nil
 
 	default:
 		return openai.UserMessage(""), llm.NewValidationError("role", "unknown role", string(msg.Role))

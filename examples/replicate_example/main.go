@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/easyagent-dev/llm"
-	"github.com/easyagent-dev/llm/models"
+	"github.com/easyagent-dev/llm/providers"
 	"log"
 	"os"
 )
@@ -20,7 +20,7 @@ func main() {
 	}
 
 	// Create Replicate image model client
-	model, err := models.NewReplicateImageModel(apiKey)
+	provider, err := providers.NewReplicateModelProvider(llm.WithAPIKey(apiKey))
 	if err != nil {
 		log.Fatalf("Failed to create Replicate model: %v", err)
 	}
@@ -36,7 +36,10 @@ func main() {
 			Size: "1024x1024",
 		},
 	}
-
+	model, err := provider.NewImageModelModel("black-forest-labs/flux-1.1-pro")
+	if err != nil {
+		log.Fatalf("Failed to create DeepSeek model: %v", err)
+	}
 	fmt.Println("Sending request to Replicate...")
 	resp, err := model.GenerateImage(ctx, req)
 	if err != nil {

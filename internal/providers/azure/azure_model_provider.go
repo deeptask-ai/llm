@@ -4,16 +4,22 @@
 package azure
 
 import (
+	_ "embed"
+	"encoding/json"
+	"errors"
 	"github.com/easyagent-dev/llm"
 	"github.com/easyagent-dev/llm/internal/providers/openai"
 	"github.com/openai/openai-go/v3/option"
 )
 
-type AzureOpenAIModel struct {
-	*openai.OpenAIModel
+//go:embed openai.json
+var openaiModels []byte
+
+type AzureOpenAIModelProvider struct {
+	*openai.OpenAIModelProvider
 }
 
-func NewAzureOpenAIModel(opts ...llm.ModelOption) (*AzureOpenAIModel, error) {
+func NewAzureOpenAIModelProvider(opts ...llm.ModelOption) (*AzureOpenAIModelProvider, error) {
 	config := llm.ApplyOptions(opts)
 
 	if config.APIKey == "" {
@@ -34,22 +40,21 @@ func NewAzureOpenAIModel(opts ...llm.ModelOption) (*AzureOpenAIModel, error) {
 
 	// Append any custom options
 	requestOpts = append(requestOpts, config.Options...)
-
-	// Create base model with Azure OpenAI's API endpoint and required headers
-	base, err := openai.NewOpenAIBaseModel(config.APIKey, requestOpts...)
+	var models []*llm.ModelInfo
+	if err := json.Unmarshal(openaiModels, &models); err != nil {
+		return nil, errors.New("failed to read model info")
+	}
+	// Create baseProvider model with Azure OpenAI's API endpoint and required headers
+	provider, err := openai.NewBaseOpenAIModelProvider("azure_openai", models, requestOpts)
 	if err != nil {
 		return nil, err
 	}
 
-	return &AzureOpenAIModel{
-		OpenAIModel: &openai.OpenAIModel{
-			OpenAICompletionModel: &openai.OpenAICompletionModel{OpenAIBaseModel: base},
-			OpenAIEmbeddingModel:  &openai.OpenAIEmbeddingModel{OpenAIBaseModel: base},
-			OpenAIImageModel:      &openai.OpenAIImageModel{OpenAIBaseModel: base},
-		},
+	return &AzureOpenAIModelProvider{
+		OpenAIModelProvider: provider,
 	}, nil
 }
 
-func (p *AzureOpenAIModel) Name() string {
+func (p *AzureOpenAIModelProvider) Name() string {
 	return "azure_openai"
 }

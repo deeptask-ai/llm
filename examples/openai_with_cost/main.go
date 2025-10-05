@@ -6,7 +6,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/easyagent-dev/llm/models"
+	"github.com/easyagent-dev/llm/providers"
 	"log"
 	"os"
 
@@ -21,7 +21,7 @@ func main() {
 	}
 
 	// Create OpenAI model client
-	model, err := models.NewOpenAIModel(
+	provider, err := providers.NewOpenAIModelProvider(
 		llm.WithAPIKey(apiKey),
 	)
 	if err != nil {
@@ -33,7 +33,6 @@ func main() {
 	// Example: Basic completion with cost tracking enabled
 	fmt.Println("=== OpenAI Completion with Cost Tracking ===")
 	req := &llm.CompletionRequest{
-		Model:        "gpt-4o-mini",
 		Instructions: "You are a helpful assistant.",
 		Messages: []*llm.ModelMessage{
 			{
@@ -41,12 +40,12 @@ func main() {
 				Content: "What is the capital of France?",
 			},
 		},
-		Options: []llm.CompletionOption{
-			llm.WithCost(true),
-			llm.WithUsage(true),
-		},
 	}
-
+	model, err := provider.NewCompletionModel("gpt-4o-mini", llm.WithCost(true),
+		llm.WithUsage(true))
+	if err != nil {
+		log.Fatalf("Failed to create DeepSeek model: %v", err)
+	}
 	resp, err := model.Complete(ctx, req)
 	if err != nil {
 		log.Fatalf("Completion failed: %v", err)

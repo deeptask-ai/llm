@@ -8,15 +8,14 @@ import (
 	_ "embed"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/easyagent-dev/llm"
-	"github.com/openai/openai-go/v3/shared"
-	"strconv"
-	"sync"
-
 	"github.com/easyagent-dev/llm/internal/common"
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/responses"
+	"github.com/openai/openai-go/v3/shared"
+	"strconv"
 
 	"github.com/openai/openai-go/v3/option"
 )
@@ -24,92 +23,91 @@ import (
 //go:embed openai.json
 var openaiModels []byte
 
-// OpenAIBaseModel provides base functionality for OpenAI models
-type OpenAIBaseModel struct {
-	client     openai.Client
-	apiKey     string
-	modelCache map[string]*llm.ModelInfo
-	cacheMutex sync.RWMutex
+// OpenAIModelProvider provides base functionality for OpenAI models
+type OpenAIModelProvider struct {
+	*llm.DefaultModelProvider
+	client openai.Client
 }
 
-func NewOpenAIBaseModel(apiKey string, opts ...option.RequestOption) (*OpenAIBaseModel, error) {
-	if apiKey == "" {
-		return nil, llm.ErrAPIKeyEmpty
+var _ llm.ModelProvider = (*OpenAIModelProvider)(nil)
+
+func NewOpenAIModelProvider(opts ...llm.ModelOption) (*OpenAIModelProvider, error) {
+	var models []*llm.ModelInfo
+	if err := json.Unmarshal(openaiModels, &models); err != nil {
+		return nil, errors.New("failed to read model info")
 	}
+	config := llm.ApplyOptions(opts)
+	requestOpts := []option.RequestOption{}
+	requestOpts = append(requestOpts, option.WithAPIKey(config.APIKey))
 
-	// Prepend API key option to any additional options
-	allOpts := append([]option.RequestOption{option.WithAPIKey(apiKey)}, opts...)
-	client := openai.NewClient(allOpts...)
+	return NewBaseOpenAIModelProvider("openai", models, requestOpts)
+}
 
-	return &OpenAIBaseModel{
-		client:     client,
-		apiKey:     apiKey,
-		modelCache: make(map[string]*llm.ModelInfo),
-		cacheMutex: sync.RWMutex{},
+func NewBaseOpenAIModelProvider(name string, models []*llm.ModelInfo, reqOpts []option.RequestOption) (*OpenAIModelProvider, error) {
+	client := openai.NewClient(reqOpts...)
+
+	provider := llm.NewDefaultModelProvider(name, models)
+
+	return &OpenAIModelProvider{
+		DefaultModelProvider: provider,
+		client:               client,
 	}, nil
 }
 
-func (b *OpenAIBaseModel) Name() string {
-	return "openai"
+func (p *OpenAIModelProvider) NewCompletionModel(model string, opts ...llm.CompletionOption) (llm.CompletionModel, error) {
+	info := p.GetModelInfo(model)
+	if info == nil {
+		return nil, errors.New("model not found")
+	}
+	return NewOpenAICompletionModel(model, info, p.client, opts...)
 }
 
-func (b *OpenAIBaseModel) SupportedModels() []*llm.ModelInfo {
-	var models []*llm.ModelInfo
-	if err := json.Unmarshal(openaiModels, &models); err != nil {
-		return nil
+func (p *OpenAIModelProvider) NewEmbeddingModel(model string) (llm.EmbeddingModel, error) {
+	info := p.GetModelInfo(model)
+	if info == nil {
+		return nil, errors.New("model not found")
 	}
-	return models
+	return NewOpenAIEmbeddingModel(model, info, p.client)
 }
 
-// getModelInfo returns the ModelInfo for a given model with caching for better performance
-func (b *OpenAIBaseModel) getModelInfo(modelID string) *llm.ModelInfo {
-	// Try to get from cache first (read lock)
-	b.cacheMutex.RLock()
-	if modelInfo, exists := b.modelCache[modelID]; exists {
-		b.cacheMutex.RUnlock()
-		return modelInfo
+func (p *OpenAIModelProvider) NewImageModel(model string) (llm.ImageModel, error) {
+	info := p.GetModelInfo(model)
+	if info == nil {
+		return nil, errors.New("model not found")
 	}
-	b.cacheMutex.RUnlock()
-
-	// Not in cache, search through supported models
-	models := b.SupportedModels()
-	for _, model := range models {
-		if model.ID == modelID {
-			// Cache the result (write lock)
-			b.cacheMutex.Lock()
-			b.modelCache[modelID] = model
-			b.cacheMutex.Unlock()
-			return model
-		}
-	}
-	return nil
+	return NewOpenAIImageModel(model, info, p.client)
 }
 
-// ClearModelCache clears the model info cache
-func (b *OpenAIBaseModel) ClearModelCache() {
-	b.cacheMutex.Lock()
-	b.modelCache = make(map[string]*llm.ModelInfo)
-	b.cacheMutex.Unlock()
+func (p *OpenAIModelProvider) NewConversationModel(model string, opts ...llm.ResponseOption) (llm.ConversationModel, error) {
+	info := p.GetModelInfo(model)
+	if info == nil {
+		return nil, errors.New("model not found")
+	}
+	return NewOpenAIConversationModel(model, info, p.client, opts...)
 }
 
 // OpenAICompletionModel implements CompletionModel interface
 type OpenAICompletionModel struct {
-	*OpenAIBaseModel
+	name      string
+	modelInfo *llm.ModelInfo
+	client    openai.Client
+	options   []llm.CompletionOption
 }
 
-func NewOpenAICompletionModel(apiKey string, opts ...option.RequestOption) (*OpenAICompletionModel, error) {
-	base, err := NewOpenAIBaseModel(apiKey, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return &OpenAICompletionModel{OpenAIBaseModel: base}, nil
+func NewOpenAICompletionModel(name string, modelInfo *llm.ModelInfo, client openai.Client, opts ...llm.CompletionOption) (*OpenAICompletionModel, error) {
+	return &OpenAICompletionModel{
+		name:      name,
+		modelInfo: modelInfo,
+		client:    client,
+		options:   opts,
+	}, nil
 }
 
 func (p *OpenAICompletionModel) StreamComplete(ctx context.Context, req *llm.CompletionRequest) (llm.StreamCompletionResponse, error) {
 	// Parse options
-	opts := llm.ApplyCompletionOptions(req.Options)
+	opts := llm.ApplyCompletionOptions(p.options)
 
-	params, err := ToChatCompletionParams(req.Model, req.Instructions, req.Messages, opts)
+	params, err := ToChatCompletionParams(p.name, req.Instructions, req.Messages, opts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create chat llm params: %w", err)
 	}
@@ -203,8 +201,7 @@ func (p *OpenAICompletionModel) StreamComplete(ctx context.Context, req *llm.Com
 			// Calculate cost if requested
 			var cost *float64
 			if opts.WithCost != nil && *opts.WithCost {
-				modelInfo := p.getModelInfo(req.Model)
-				cost = common.CalculateCost(modelInfo, usage)
+				cost = common.CalculateCost(p.modelInfo, usage)
 			}
 
 			// Send usage information at the end
@@ -224,9 +221,9 @@ func (p *OpenAICompletionModel) StreamComplete(ctx context.Context, req *llm.Com
 
 func (p *OpenAICompletionModel) Complete(ctx context.Context, req *llm.CompletionRequest) (*llm.CompletionResponse, error) {
 	// Parse options
-	opts := llm.ApplyCompletionOptions(req.Options)
+	opts := llm.ApplyCompletionOptions(p.options)
 
-	params, err := ToChatCompletionParams(req.Model, req.Instructions, req.Messages, opts)
+	params, err := ToChatCompletionParams(p.name, req.Instructions, req.Messages, opts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create chat llm params: %w", err)
 	}
@@ -258,8 +255,7 @@ func (p *OpenAICompletionModel) Complete(ctx context.Context, req *llm.Completio
 
 		// Calculate cost if requested
 		if opts.WithCost != nil && *opts.WithCost {
-			modelInfo := p.getModelInfo(req.Model)
-			cost = common.CalculateCost(modelInfo, usage)
+			cost = common.CalculateCost(p.modelInfo, usage)
 		}
 	}
 
@@ -273,15 +269,17 @@ func (p *OpenAICompletionModel) Complete(ctx context.Context, req *llm.Completio
 
 // OpenAIEmbeddingModel implements EmbeddingModel interface
 type OpenAIEmbeddingModel struct {
-	*OpenAIBaseModel
+	name      string
+	modelInfo *llm.ModelInfo
+	client    openai.Client
 }
 
-func NewOpenAIEmbeddingModel(apiKey string, opts ...option.RequestOption) (*OpenAIEmbeddingModel, error) {
-	base, err := NewOpenAIBaseModel(apiKey, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return &OpenAIEmbeddingModel{OpenAIBaseModel: base}, nil
+func NewOpenAIEmbeddingModel(name string, modelInfo *llm.ModelInfo, client openai.Client) (*OpenAIEmbeddingModel, error) {
+	return &OpenAIEmbeddingModel{
+		name:      name,
+		modelInfo: modelInfo,
+		client:    client,
+	}, nil
 }
 
 func (p *OpenAIEmbeddingModel) GenerateEmbeddings(ctx context.Context, req *llm.EmbeddingRequest) (*llm.EmbeddingResponse, error) {
@@ -344,9 +342,8 @@ func (p *OpenAIEmbeddingModel) GenerateEmbeddings(ctx context.Context, req *llm.
 
 	// Calculate cost if model info is available
 	var cost *float64
-	modelInfo := p.getModelInfo(req.Model)
-	if modelInfo != nil {
-		cost = common.CalculateCost(modelInfo, usage)
+	if p.modelInfo != nil {
+		cost = common.CalculateCost(p.modelInfo, usage)
 	}
 
 	return &llm.EmbeddingResponse{
@@ -358,15 +355,17 @@ func (p *OpenAIEmbeddingModel) GenerateEmbeddings(ctx context.Context, req *llm.
 
 // OpenAIImageModel implements ImageModel interface
 type OpenAIImageModel struct {
-	*OpenAIBaseModel
+	name      string
+	modelInfo *llm.ModelInfo
+	client    openai.Client
 }
 
-func NewOpenAIImageModel(apiKey string, opts ...option.RequestOption) (*OpenAIImageModel, error) {
-	base, err := NewOpenAIBaseModel(apiKey, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return &OpenAIImageModel{OpenAIBaseModel: base}, nil
+func NewOpenAIImageModel(name string, modelInfo *llm.ModelInfo, client openai.Client) (*OpenAIImageModel, error) {
+	return &OpenAIImageModel{
+		name:      name,
+		modelInfo: modelInfo,
+		client:    client,
+	}, nil
 }
 
 func (p *OpenAIImageModel) GenerateImage(ctx context.Context, req *llm.ImageRequest) (*llm.ImageResponse, error) {
@@ -438,9 +437,8 @@ func (p *OpenAIImageModel) GenerateImage(ctx context.Context, req *llm.ImageRequ
 	// Calculate cost if requested - llm generation has fixed pricing
 	var cost *float64
 	if req.Config != nil {
-		modelInfo := p.getModelInfo("dall-e-3") // Use DALL-E 3 pricing
-		if modelInfo != nil {
-			llmPrice, err := strconv.ParseFloat(modelInfo.Pricing.Image, 64)
+		if p.modelInfo != nil {
+			llmPrice, err := strconv.ParseFloat(p.modelInfo.Pricing.Image, 64)
 			if err == nil {
 				totalCost := llmPrice
 				cost = &totalCost
@@ -457,22 +455,26 @@ func (p *OpenAIImageModel) GenerateImage(ctx context.Context, req *llm.ImageRequ
 
 // OpenAIConversationModel implements ConversationModel interface
 type OpenAIConversationModel struct {
-	*OpenAIBaseModel
+	name      string
+	modelInfo *llm.ModelInfo
+	client    openai.Client
+	options   []llm.ResponseOption
 }
 
-func NewOpenAIConversationModel(apiKey string, opts ...option.RequestOption) (*OpenAIConversationModel, error) {
-	base, err := NewOpenAIBaseModel(apiKey, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return &OpenAIConversationModel{OpenAIBaseModel: base}, nil
+func NewOpenAIConversationModel(name string, modelInfo *llm.ModelInfo, client openai.Client, opts ...llm.ResponseOption) (*OpenAIConversationModel, error) {
+	return &OpenAIConversationModel{
+		name:      name,
+		modelInfo: modelInfo,
+		client:    client,
+		options:   opts,
+	}, nil
 }
 
 func (p *OpenAIConversationModel) StreamResponse(ctx context.Context, req *llm.ConversationRequest) (llm.StreamConversationResponse, error) {
 	// Parse options
-	opts := llm.ApplyResponseOptions(req.Options)
+	opts := llm.ApplyResponseOptions(p.options)
 
-	params, err := ToResponseNewParams(req.Model, req.Input, opts)
+	params, err := ToResponseNewParams(p.name, req.Input, opts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create response params: %w", err)
 	}
@@ -541,9 +543,9 @@ func (p *OpenAIConversationModel) StreamResponse(ctx context.Context, req *llm.C
 
 func (p *OpenAIConversationModel) Response(ctx context.Context, req *llm.ConversationRequest) (*llm.ConversationResponse, error) {
 	// Parse options
-	opts := llm.ApplyResponseOptions(req.Options)
+	opts := llm.ApplyResponseOptions(p.options)
 
-	params, err := ToResponseNewParams(req.Model, req.Input, opts)
+	params, err := ToResponseNewParams(p.name, req.Input, opts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create response params: %w", err)
 	}
@@ -569,8 +571,7 @@ func (p *OpenAIConversationModel) Response(ctx context.Context, req *llm.Convers
 		}
 
 		if opts.CompletionOptions.WithCost != nil && *opts.CompletionOptions.WithCost {
-			modelInfo := p.getModelInfo(req.Model)
-			cost = common.CalculateCost(modelInfo, usage)
+			cost = common.CalculateCost(p.modelInfo, usage)
 		}
 	}
 
@@ -581,58 +582,7 @@ func (p *OpenAIConversationModel) Response(ctx context.Context, req *llm.Convers
 	}, nil
 }
 
-// OpenAIModel is a composite model that implements all OpenAI capabilities
-type OpenAIModel struct {
-	*OpenAICompletionModel
-	*OpenAIConversationModel
-	*OpenAIEmbeddingModel
-	*OpenAIImageModel
-}
-
-func NewOpenAIModel(opts ...llm.ModelOption) (*OpenAIModel, error) {
-	config := llm.ApplyOptions(opts)
-
-	if config.APIKey == "" {
-		return nil, llm.ErrAPIKeyEmpty
-	}
-
-	// Build request options list
-	requestOpts := config.Options
-
-	// Set base URL if provided
-	if config.BaseURL != "" {
-		requestOpts = append([]option.RequestOption{option.WithBaseURL(config.BaseURL)}, requestOpts...)
-	}
-
-	// Create base model
-	base, err := NewOpenAIBaseModel(config.APIKey, requestOpts...)
-	if err != nil {
-		return nil, err
-	}
-
-	return &OpenAIModel{
-		OpenAICompletionModel:   &OpenAICompletionModel{OpenAIBaseModel: base},
-		OpenAIConversationModel: &OpenAIConversationModel{OpenAIBaseModel: base},
-		OpenAIEmbeddingModel:    &OpenAIEmbeddingModel{OpenAIBaseModel: base},
-		OpenAIImageModel:        &OpenAIImageModel{OpenAIBaseModel: base},
-	}, nil
-}
-
-// Override base methods to avoid ambiguity
-func (m *OpenAIModel) Name() string {
-	return m.OpenAICompletionModel.Name()
-}
-
-func (m *OpenAIModel) SupportedModels() []*llm.ModelInfo {
-	return m.OpenAICompletionModel.SupportedModels()
-}
-
-func (m *OpenAIModel) ClearModelCache() {
-	m.OpenAICompletionModel.ClearModelCache()
-}
-
 // Helper functions
-
 func ToChatCompletionParams(model string, instructions string, messages []*llm.ModelMessage, opts *llm.CompletionOptions) (openai.ChatCompletionNewParams, error) {
 	openaiMessages := make([]openai.ChatCompletionMessageParamUnion, 0, len(messages)+1)
 

@@ -5,51 +5,53 @@ package replicate
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"io"
-	"net/http"
-
 	"github.com/easyagent-dev/llm"
 	"github.com/replicate/replicate-go"
+	"io"
+	"net/http"
 )
 
-// ReplicateImageModel implements ImageModel interface for Replicate
-type ReplicateImageModel struct {
+// ReplicateModelProvider implements ImageModel interface for Replicate
+type ReplicateModelProvider struct {
+	*llm.DefaultModelProvider
 	apiKey string
 	client *replicate.Client
 }
 
-var _ llm.ImageModel = (*ReplicateImageModel)(nil)
+var _ llm.ModelProvider = (*ReplicateModelProvider)(nil)
 
-// NewReplicateImageModel creates a new Replicate image model
-func NewReplicateImageModel(apiKey string, opts ...llm.ModelOption) (*ReplicateImageModel, error) {
+// NewReplicateModelProvider creates a new Replicate image model
+func NewReplicateModelProvider(opts ...llm.ModelOption) (*ReplicateModelProvider, error) {
+	config := llm.ApplyOptions(opts)
+	apiKey := config.APIKey
 	if apiKey == "" {
 		return nil, llm.ErrAPIKeyEmpty
 	}
-
 	// Create Replicate client
 	r8, err := replicate.NewClient(replicate.WithToken(apiKey))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create replicate client: %w", err)
 	}
 
-	return &ReplicateImageModel{
-		apiKey: apiKey,
-		client: r8,
+	models := loadModels(r8)
+
+	provider := llm.NewDefaultModelProvider("replicate", models)
+
+	return &ReplicateModelProvider{
+		DefaultModelProvider: provider,
+		apiKey:               apiKey,
+		client:               r8,
 	}, nil
 }
 
-// Name returns the provider name
-func (m *ReplicateImageModel) Name() string {
-	return "replicate"
-}
-
 // SupportedModels returns a list of supported models
-func (m *ReplicateImageModel) SupportedModels() []*llm.ModelInfo {
+func loadModels(client *replicate.Client) []*llm.ModelInfo {
 	ctx := context.Background()
 
 	// List models from Replicate API
-	page, err := m.client.ListModels(ctx)
+	page, err := client.ListModels(ctx)
 	if err != nil {
 		// Return empty list on error
 		return []*llm.ModelInfo{}
@@ -77,6 +79,29 @@ func (m *ReplicateImageModel) SupportedModels() []*llm.ModelInfo {
 	}
 
 	return models
+}
+
+func (p *ReplicateModelProvider) NewImageModel(model string) (llm.ImageModel, error) {
+	info := p.GetModelInfo(model)
+	if info == nil {
+		return nil, errors.New("model not found")
+	}
+	return NewReplicateImageModel(model, info, p.client)
+}
+
+// ReplicateImageModel implements ImageModel interface
+type ReplicateImageModel struct {
+	name      string
+	modelInfo *llm.ModelInfo
+	client    *replicate.Client
+}
+
+func NewReplicateImageModel(name string, modelInfo *llm.ModelInfo, client *replicate.Client) (*ReplicateImageModel, error) {
+	return &ReplicateImageModel{
+		name:      name,
+		modelInfo: modelInfo,
+		client:    client,
+	}, nil
 }
 
 // GenerateImage generates an image from a text prompt

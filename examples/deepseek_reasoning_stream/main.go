@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/easyagent-dev/llm"
-	"github.com/easyagent-dev/llm/models"
+	"github.com/easyagent-dev/llm/providers"
 	"log"
 	"os"
 )
@@ -20,11 +20,11 @@ func main() {
 	}
 
 	// Create DeepSeek completion model
-	model, err := models.NewDeepSeekModel(
+	provider, err := providers.NewDeepSeekModelProvider(
 		llm.WithAPIKey(apiKey),
 	)
 	if err != nil {
-		log.Fatalf("Failed to create DeepSeek model: %v", err)
+		log.Fatalf("Failed to create DeepSeek provider: %v", err)
 	}
 
 	ctx := context.Background()
@@ -32,7 +32,6 @@ func main() {
 	// Example 1: Basic streaming
 	fmt.Println("=== Example 1: Basic Streaming ===")
 	req := &llm.CompletionRequest{
-		Model:        "deepseek-reasoner",
 		Instructions: "You are a helpful assistant.",
 		Messages: []*llm.ModelMessage{
 			{
@@ -42,6 +41,10 @@ func main() {
 		},
 	}
 
+	model, err := provider.NewCompletionModel("deepseek-reasoner")
+	if err != nil {
+		log.Fatalf("Failed to create DeepSeek model: %v", err)
+	}
 	stream, err := model.StreamComplete(ctx, req)
 	if err != nil {
 		log.Fatalf("Stream failed: %v", err)

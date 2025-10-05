@@ -6,16 +6,22 @@ package gemini
 import (
 	_ "embed"
 	"encoding/json"
+	"errors"
 	"github.com/easyagent-dev/llm"
 	"github.com/easyagent-dev/llm/internal/providers/openai"
 	"github.com/openai/openai-go/v3/option"
 )
 
-type GeminiModel struct {
-	*openai.OpenAICompletionModel
+type GeminiModelProvider struct {
+	*openai.OpenAIModelProvider
 }
 
-func NewGeminiModel(opts ...llm.ModelOption) (*GeminiModel, error) {
+var _ llm.ModelProvider = (*GeminiModelProvider)(nil)
+
+//go:embed gemini.json
+var geminiModels []byte
+
+func NewGeminiModelProvider(opts ...llm.ModelOption) (*GeminiModelProvider, error) {
 	config := llm.ApplyOptions(opts)
 
 	if config.APIKey == "" {
@@ -24,6 +30,7 @@ func NewGeminiModel(opts ...llm.ModelOption) (*GeminiModel, error) {
 
 	// Build request options list
 	requestOpts := []option.RequestOption{}
+	requestOpts = append(requestOpts, option.WithAPIKey(config.APIKey))
 
 	// Set base URL (use default if not provided)
 	baseURL := config.BaseURL
@@ -35,28 +42,18 @@ func NewGeminiModel(opts ...llm.ModelOption) (*GeminiModel, error) {
 	// Append any custom options
 	requestOpts = append(requestOpts, config.Options...)
 
-	// Create the completion model with Gemini's OpenAI-compatible API endpoint
-	completionModel, err := openai.NewOpenAICompletionModel(config.APIKey, requestOpts...)
+	var models []*llm.ModelInfo
+	if err := json.Unmarshal(geminiModels, &models); err != nil {
+		return nil, errors.New("failed to read model info")
+	}
+
+	// Create the completion model with DeepSeek's API endpoint
+	provider, err := openai.NewBaseOpenAIModelProvider("gemini", models, requestOpts)
 	if err != nil {
 		return nil, err
 	}
 
-	return &GeminiModel{
-		OpenAICompletionModel: completionModel,
+	return &GeminiModelProvider{
+		OpenAIModelProvider: provider,
 	}, nil
-}
-
-//go:embed gemini.json
-var geminiModels []byte
-
-func (p *GeminiModel) SupportedModels() []*llm.ModelInfo {
-	var models []*llm.ModelInfo
-	if err := json.Unmarshal(geminiModels, &models); err != nil {
-		return nil
-	}
-	return models
-}
-
-func (p *GeminiModel) Name() string {
-	return "gemini"
 }

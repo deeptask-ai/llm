@@ -6,16 +6,22 @@ package deepseek
 import (
 	_ "embed"
 	"encoding/json"
+	"errors"
 	"github.com/easyagent-dev/llm"
 	"github.com/easyagent-dev/llm/internal/providers/openai"
 	"github.com/openai/openai-go/v3/option"
 )
 
-type DeepSeekModel struct {
-	*openai.OpenAICompletionModel
+type DeepSeekModelProvider struct {
+	*openai.OpenAIModelProvider
 }
 
-func NewDeepSeekModel(opts ...llm.ModelOption) (*DeepSeekModel, error) {
+var _ llm.ModelProvider = (*DeepSeekModelProvider)(nil)
+
+//go:embed deepseek.json
+var deepSeekModels []byte
+
+func NewDeepSeekModelProvider(opts ...llm.ModelOption) (*DeepSeekModelProvider, error) {
 	config := llm.ApplyOptions(opts)
 
 	if config.APIKey == "" {
@@ -24,6 +30,7 @@ func NewDeepSeekModel(opts ...llm.ModelOption) (*DeepSeekModel, error) {
 
 	// Build request options list
 	requestOpts := []option.RequestOption{}
+	requestOpts = append(requestOpts, option.WithAPIKey(config.APIKey))
 
 	// Set base URL (use default if not provided)
 	baseURL := config.BaseURL
@@ -35,28 +42,18 @@ func NewDeepSeekModel(opts ...llm.ModelOption) (*DeepSeekModel, error) {
 	// Append any custom options
 	requestOpts = append(requestOpts, config.Options...)
 
+	var models []*llm.ModelInfo
+	if err := json.Unmarshal(deepSeekModels, &models); err != nil {
+		return nil, errors.New("failed to read model info")
+	}
+
 	// Create the completion model with DeepSeek's API endpoint
-	completionModel, err := openai.NewOpenAICompletionModel(config.APIKey, requestOpts...)
+	provider, err := openai.NewBaseOpenAIModelProvider("deepseek", models, requestOpts)
 	if err != nil {
 		return nil, err
 	}
 
-	return &DeepSeekModel{
-		OpenAICompletionModel: completionModel,
+	return &DeepSeekModelProvider{
+		OpenAIModelProvider: provider,
 	}, nil
-}
-
-//go:embed deepseek.json
-var deepSeekModels []byte
-
-func (p *DeepSeekModel) SupportedModels() []*llm.ModelInfo {
-	var models []*llm.ModelInfo
-	if err := json.Unmarshal(deepSeekModels, &models); err != nil {
-		return nil
-	}
-	return models
-}
-
-func (p *DeepSeekModel) Name() string {
-	return "deepseek"
 }

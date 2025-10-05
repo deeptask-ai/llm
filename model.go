@@ -42,14 +42,6 @@ type ModelPricing struct {
 	InputCacheWrite   string `json:"inputCacheWrite"`   // Price per million cached input tokens written
 }
 
-// BaseModel defines the base interface that all model providers must implement
-type BaseModel interface {
-	// Name returns the provider name (e.g., "openai", "claude", "gemini")
-	Name() string
-	// SupportedModels returns a list of all models supported by this provider
-	SupportedModels() []*ModelInfo
-}
-
 type Role string
 
 const (

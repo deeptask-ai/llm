@@ -6,7 +6,6 @@ import (
 
 // ImageModel defines the interface for image generation operations
 type ImageModel interface {
-	BaseModel
 	// GenerateImage generates images from text prompts
 	GenerateImage(ctx context.Context, req *ImageRequest) (*ImageResponse, error)
 }

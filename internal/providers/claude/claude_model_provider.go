@@ -6,16 +6,22 @@ package claude
 import (
 	_ "embed"
 	"encoding/json"
+	"errors"
 	"github.com/easyagent-dev/llm"
 	"github.com/easyagent-dev/llm/internal/providers/openai"
 	"github.com/openai/openai-go/v3/option"
 )
 
-type ClaudeModel struct {
-	*openai.OpenAICompletionModel
+type ClaudeModelProvider struct {
+	*openai.OpenAIModelProvider
 }
 
-func NewClaudeModel(opts ...llm.ModelOption) (*ClaudeModel, error) {
+//go:embed claude.json
+var claudeModels []byte
+
+var _ llm.ModelProvider = (*ClaudeModelProvider)(nil)
+
+func NewClaudeModelProvider(opts ...llm.ModelOption) (*ClaudeModelProvider, error) {
 	config := llm.ApplyOptions(opts)
 
 	if config.APIKey == "" {
@@ -37,28 +43,18 @@ func NewClaudeModel(opts ...llm.ModelOption) (*ClaudeModel, error) {
 	// Append any custom options
 	requestOpts = append(requestOpts, config.Options...)
 
+	var models []*llm.ModelInfo
+	if err := json.Unmarshal(claudeModels, &models); err != nil {
+		return nil, errors.New("failed to read model info")
+	}
+
 	// Create the completion model with Claude's API endpoint and required headers
-	completionModel, err := openai.NewOpenAICompletionModel(config.APIKey, requestOpts...)
+	provider, err := openai.NewBaseOpenAIModelProvider("claude", config.APIKey, models, requestOpts...)
 	if err != nil {
 		return nil, err
 	}
 
-	return &ClaudeModel{
-		OpenAICompletionModel: completionModel,
+	return &ClaudeModelProvider{
+		OpenAIModelProvider: provider,
 	}, nil
-}
-
-//go:embed claude.json
-var claudeModels []byte
-
-func (p *ClaudeModel) SupportedModels() []*llm.ModelInfo {
-	var models []*llm.ModelInfo
-	if err := json.Unmarshal(claudeModels, &models); err != nil {
-		return nil
-	}
-	return models
-}
-
-func (p *ClaudeModel) Name() string {
-	return "claude"
 }

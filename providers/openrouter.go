@@ -1,7 +1,7 @@
 // Copyright 2025 The DeepTask Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package models
+package providers
 
 import (
 	"github.com/easyagent-dev/llm"
@@ -9,6 +9,6 @@ import (
 )
 
 // NewOpenRouterModel creates a new OpenRouter model that supports llm
-func NewOpenRouterModel(opts ...llm.ModelOption) (llm.CompletionModel, error) {
-	return openrouter.NewOpenRouterModel(opts...)
+func NewOpenRouterModel(opts ...llm.ModelOption) (llm.ModelProvider, error) {
+	return openrouter.NewOpenRouterModelProvider(opts...)
 }

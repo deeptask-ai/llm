@@ -94,17 +94,6 @@ func CreateTokenUsage(inputTokens, outputTokens, reasoningTokens int64, llms, re
 	}
 }
 
-// ValidateModelRequest validates common model request fields
-func ValidateModelRequest(req *llm.CompletionRequest) error {
-	if req == nil {
-		return errors.New("request cannot be nil")
-	}
-	if req.Model == "" {
-		return errors.New("model cannot be empty")
-	}
-	return nil
-}
-
 // ValidateEmbeddingRequest validates llm request fields
 func ValidateEmbeddingRequest(req *llm.EmbeddingRequest) error {
 	if req == nil {

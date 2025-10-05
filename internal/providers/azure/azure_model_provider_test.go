@@ -12,85 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestNewAzureOpenAIModel_Success(t *testing.T) {
-	tests := []struct {
-		name        string
-		opts        []llm.ModelOption
-		wantName    string
-		description string
-	}{
-		{
-			name: "basic_configuration",
-			opts: []llm.ModelOption{
-				llm.WithAPIKey("test-api-key"),
-				llm.WithBaseURL("https://test.openai.azure.com"),
-				llm.WithAPIVersion("2024-02-15-preview"),
-			},
-			wantName:    "azure_openai",
-			description: "Should create Azure OpenAI model with basic configuration",
-		},
-		{
-			name: "with_custom_request_option",
-			opts: []llm.ModelOption{
-				llm.WithAPIKey("test-api-key"),
-				llm.WithBaseURL("https://test.openai.azure.com"),
-				llm.WithAPIVersion("2024-02-15-preview"),
-				llm.WithRequestOption(option.WithHeader("Custom-Header", "custom-value")),
-			},
-			wantName:    "azure_openai",
-			description: "Should create Azure OpenAI model with custom request options",
-		},
-		{
-			name: "with_multiple_request_options",
-			opts: []llm.ModelOption{
-				llm.WithAPIKey("test-api-key"),
-				llm.WithBaseURL("https://test.openai.azure.com"),
-				llm.WithAPIVersion("2024-02-15-preview"),
-				llm.WithRequestOptions(
-					option.WithHeader("Custom-Header-1", "value1"),
-					option.WithHeader("Custom-Header-2", "value2"),
-				),
-			},
-			wantName:    "azure_openai",
-			description: "Should create Azure OpenAI model with multiple custom request options",
-		},
-		{
-			name: "different_api_version",
-			opts: []llm.ModelOption{
-				llm.WithAPIKey("test-api-key"),
-				llm.WithBaseURL("https://test.openai.azure.com"),
-				llm.WithAPIVersion("2023-05-15"),
-			},
-			wantName:    "azure_openai",
-			description: "Should create Azure OpenAI model with different API version",
-		},
-		{
-			name: "custom_base_url",
-			opts: []llm.ModelOption{
-				llm.WithAPIKey("test-api-key"),
-				llm.WithBaseURL("https://custom.openai.azure.com/openai/deployments/gpt-4"),
-				llm.WithAPIVersion("2024-02-15-preview"),
-			},
-			wantName:    "azure_openai",
-			description: "Should create Azure OpenAI model with custom base URL",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			model, err := NewAzureOpenAIModel(tt.opts...)
-
-			require.NoError(t, err, tt.description)
-			require.NotNil(t, model, "Model should not be nil")
-			assert.NotNil(t, model.OpenAIModel, "OpenAIModel should not be nil")
-			assert.NotNil(t, model.OpenAICompletionModel, "OpenAICompletionModel should not be nil")
-			assert.NotNil(t, model.OpenAIEmbeddingModel, "OpenAIEmbeddingModel should not be nil")
-			assert.NotNil(t, model.OpenAIImageModel, "OpenAIImageModel should not be nil")
-			assert.Equal(t, tt.wantName, model.Name(), "Model name should match expected value")
-		})
-	}
-}
-
 func TestNewAzureOpenAIModel_MissingAPIKey(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -118,7 +39,7 @@ func TestNewAzureOpenAIModel_MissingAPIKey(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			model, err := NewAzureOpenAIModel(tt.opts...)
+			model, err := NewAzureOpenAIModelProvider(tt.opts...)
 
 			assert.Error(t, err, tt.description)
 			assert.ErrorIs(t, err, llm.ErrAPIKeyEmpty, "Error should be ErrAPIKeyEmpty")
@@ -154,7 +75,7 @@ func TestNewAzureOpenAIModel_MissingBaseURL(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			model, err := NewAzureOpenAIModel(tt.opts...)
+			model, err := NewAzureOpenAIModelProvider(tt.opts...)
 
 			assert.Error(t, err, tt.description)
 			assert.ErrorIs(t, err, llm.ErrBaseURLEmpty, "Error should be ErrBaseURLEmpty")
@@ -190,7 +111,7 @@ func TestNewAzureOpenAIModel_MissingAPIVersion(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			model, err := NewAzureOpenAIModel(tt.opts...)
+			model, err := NewAzureOpenAIModelProvider(tt.opts...)
 
 			assert.Error(t, err, tt.description)
 			assert.ErrorIs(t, err, llm.ErrAPIVersionEmpty, "Error should be ErrAPIVersionEmpty")
@@ -243,7 +164,7 @@ func TestNewAzureOpenAIModel_ErrorPriority(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			model, err := NewAzureOpenAIModel(tt.opts...)
+			model, err := NewAzureOpenAIModelProvider(tt.opts...)
 
 			assert.Error(t, err, tt.description)
 			assert.ErrorIs(t, err, tt.expectedErr, "Error should match expected error type")
@@ -253,7 +174,7 @@ func TestNewAzureOpenAIModel_ErrorPriority(t *testing.T) {
 }
 
 func TestAzureOpenAIModel_Name(t *testing.T) {
-	model, err := NewAzureOpenAIModel(
+	model, err := NewAzureOpenAIModelProvider(
 		llm.WithAPIKey("test-api-key"),
 		llm.WithBaseURL("https://test.openai.azure.com"),
 		llm.WithAPIVersion("2024-02-15-preview"),
@@ -265,45 +186,15 @@ func TestAzureOpenAIModel_Name(t *testing.T) {
 	assert.Equal(t, "azure_openai", model.Name(), "Name should return 'azure_openai'")
 }
 
-func TestAzureOpenAIModel_ModelStructure(t *testing.T) {
-	model, err := NewAzureOpenAIModel(
-		llm.WithAPIKey("test-api-key"),
-		llm.WithBaseURL("https://test.openai.azure.com"),
-		llm.WithAPIVersion("2024-02-15-preview"),
-	)
-
-	require.NoError(t, err)
-	require.NotNil(t, model)
-
-	t.Run("has_openai_model", func(t *testing.T) {
-		assert.NotNil(t, model.OpenAIModel, "OpenAIModel should be initialized")
-	})
-
-	t.Run("has_completion_model", func(t *testing.T) {
-		assert.NotNil(t, model.OpenAICompletionModel, "OpenAICompletionModel should be initialized")
-		assert.NotNil(t, model.OpenAICompletionModel.OpenAIBaseModel, "OpenAIBaseModel should be initialized")
-	})
-
-	t.Run("has_embedding_model", func(t *testing.T) {
-		assert.NotNil(t, model.OpenAIEmbeddingModel, "OpenAIEmbeddingModel should be initialized")
-		assert.NotNil(t, model.OpenAIEmbeddingModel.OpenAIBaseModel, "OpenAIBaseModel should be initialized")
-	})
-
-	t.Run("has_image_model", func(t *testing.T) {
-		assert.NotNil(t, model.OpenAIImageModel, "OpenAIImageModel should be initialized")
-		assert.NotNil(t, model.OpenAIImageModel.OpenAIBaseModel, "OpenAIBaseModel should be initialized")
-	})
-}
-
 func TestNewAzureOpenAIModel_MultipleInstances(t *testing.T) {
 	// Create multiple instances with different configurations
-	model1, err1 := NewAzureOpenAIModel(
+	model1, err1 := NewAzureOpenAIModelProvider(
 		llm.WithAPIKey("test-api-key-1"),
 		llm.WithBaseURL("https://test1.openai.azure.com"),
 		llm.WithAPIVersion("2024-02-15-preview"),
 	)
 
-	model2, err2 := NewAzureOpenAIModel(
+	model2, err2 := NewAzureOpenAIModelProvider(
 		llm.WithAPIKey("test-api-key-2"),
 		llm.WithBaseURL("https://test2.openai.azure.com"),
 		llm.WithAPIVersion("2023-05-15"),
@@ -316,7 +207,6 @@ func TestNewAzureOpenAIModel_MultipleInstances(t *testing.T) {
 
 	// Verify instances are independent
 	assert.NotSame(t, model1, model2, "Different instances should be created")
-	assert.NotSame(t, model1.OpenAIModel, model2.OpenAIModel, "OpenAI models should be independent")
 }
 
 // Benchmark tests
@@ -329,7 +219,7 @@ func BenchmarkNewAzureOpenAIModel_Success(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err := NewAzureOpenAIModel(opts...)
+		_, err := NewAzureOpenAIModelProvider(opts...)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -349,7 +239,7 @@ func BenchmarkNewAzureOpenAIModel_WithOptions(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err := NewAzureOpenAIModel(opts...)
+		_, err := NewAzureOpenAIModelProvider(opts...)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -357,7 +247,7 @@ func BenchmarkNewAzureOpenAIModel_WithOptions(b *testing.B) {
 }
 
 func BenchmarkAzureOpenAIModel_Name(b *testing.B) {
-	model, err := NewAzureOpenAIModel(
+	model, err := NewAzureOpenAIModelProvider(
 		llm.WithAPIKey("test-api-key"),
 		llm.WithBaseURL("https://test.openai.azure.com"),
 		llm.WithAPIVersion("2024-02-15-preview"),

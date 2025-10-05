@@ -34,7 +34,7 @@ func TestNewOpenRouterModel_MissingAPIKey(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			model, err := NewOpenRouterModel(tt.opts...)
+			model, err := NewOpenRouterModelProvider(tt.opts...)
 
 			assert.Error(t, err, tt.description)
 			assert.ErrorIs(t, err, llm.ErrAPIKeyEmpty, "Error should be ErrAPIKeyEmpty")
@@ -48,7 +48,7 @@ func TestOpenRouterModel_Name(t *testing.T) {
 	// In a real-world scenario, you might want to mock this
 	t.Skip("Skipping test that requires actual API call - enable with valid API key")
 
-	model, err := NewOpenRouterModel(llm.WithAPIKey("test-api-key"))
+	model, err := NewOpenRouterModelProvider(llm.WithAPIKey("test-api-key"))
 	if err != nil {
 		// If the API call fails (expected with invalid key), skip the rest
 		t.Skipf("API call failed as expected with test key: %v", err)
@@ -64,18 +64,13 @@ func TestOpenRouterModel_ModelStructure(t *testing.T) {
 	// In a real-world scenario, you might want to mock this
 	t.Skip("Skipping test that requires actual API call - enable with valid API key")
 
-	model, err := NewOpenRouterModel(llm.WithAPIKey("test-api-key"))
+	model, err := NewOpenRouterModelProvider(llm.WithAPIKey("test-api-key"))
 	if err != nil {
 		t.Skipf("API call failed as expected with test key: %v", err)
 		return
 	}
 
 	require.NotNil(t, model)
-
-	t.Run("has_completion_model", func(t *testing.T) {
-		assert.NotNil(t, model.OpenAICompletionModel, "OpenAICompletionModel should be initialized")
-		assert.NotNil(t, model.OpenAICompletionModel.OpenAIBaseModel, "OpenAIBaseModel should be initialized")
-	})
 
 	t.Run("has_models_map", func(t *testing.T) {
 		assert.NotNil(t, model.models, "Models map should be initialized")
@@ -87,7 +82,7 @@ func TestOpenRouterModel_SupportedModels(t *testing.T) {
 	// In a real-world scenario, you might want to mock this
 	t.Skip("Skipping test that requires actual API call - enable with valid API key")
 
-	model, err := NewOpenRouterModel(llm.WithAPIKey("test-api-key"))
+	model, err := NewOpenRouterModelProvider(llm.WithAPIKey("test-api-key"))
 	if err != nil {
 		t.Skipf("API call failed as expected with test key: %v", err)
 		return
@@ -104,7 +99,7 @@ func TestOpenRouterModel_SupportedModels(t *testing.T) {
 func TestNewOpenRouterModel_WithCustomBaseURL(t *testing.T) {
 	// This test verifies the constructor accepts custom base URL option
 	// but will still fail due to missing/invalid API key
-	model, err := NewOpenRouterModel(
+	model, err := NewOpenRouterModelProvider(
 		llm.WithAPIKey(""),
 		llm.WithBaseURL("https://custom.openrouter.ai/api/v1/"),
 	)
@@ -118,7 +113,7 @@ func TestNewOpenRouterModel_WithCustomBaseURL(t *testing.T) {
 func TestNewOpenRouterModel_WithCustomRequestOptions(t *testing.T) {
 	// This test verifies the constructor accepts custom request options
 	// but will still fail due to missing/invalid API key
-	model, err := NewOpenRouterModel(
+	model, err := NewOpenRouterModelProvider(
 		llm.WithAPIKey(""),
 		llm.WithRequestOptions(
 			option.WithHeader("Custom-Header-1", "value1"),
@@ -138,7 +133,7 @@ func TestNewOpenRouterModel_WithCustomRequestOptions(t *testing.T) {
 func BenchmarkOpenRouterModel_Name(b *testing.B) {
 	b.Skip("Skipping benchmark that requires actual API call")
 
-	model, err := NewOpenRouterModel(llm.WithAPIKey("test-api-key"))
+	model, err := NewOpenRouterModelProvider(llm.WithAPIKey("test-api-key"))
 	if err != nil {
 		b.Skipf("API call failed: %v", err)
 		return
@@ -153,7 +148,7 @@ func BenchmarkOpenRouterModel_Name(b *testing.B) {
 func BenchmarkOpenRouterModel_SupportedModels(b *testing.B) {
 	b.Skip("Skipping benchmark that requires actual API call")
 
-	model, err := NewOpenRouterModel(llm.WithAPIKey("test-api-key"))
+	model, err := NewOpenRouterModelProvider(llm.WithAPIKey("test-api-key"))
 	if err != nil {
 		b.Skipf("API call failed: %v", err)
 		return

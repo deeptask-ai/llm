@@ -6,7 +6,6 @@ import (
 
 // ConversationModel defines the interface for conversation operations using the responses API
 type ConversationModel interface {
-	BaseModel
 	// StreamResponse generates streaming content from the model using the responses API
 	StreamResponse(ctx context.Context, req *ConversationRequest) (StreamConversationResponse, error)
 	// Response generates complete content from the model using the responses API
@@ -15,9 +14,7 @@ type ConversationModel interface {
 
 // ConversationRequest represents a request to the conversation/responses API
 type ConversationRequest struct {
-	Input   string
-	Model   string
-	Options []ResponseOption
+	Input string
 }
 
 // ConversationResponse represents a complete response from the conversation/responses API

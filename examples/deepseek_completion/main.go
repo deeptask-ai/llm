@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/easyagent-dev/llm"
-	"github.com/easyagent-dev/llm/models"
+	"github.com/easyagent-dev/llm/providers"
 	"log"
 	"os"
 )
@@ -20,7 +20,7 @@ func main() {
 	}
 
 	// Create DeepSeek model client
-	model, err := models.NewDeepSeekModel(
+	provider, err := providers.NewDeepSeekModelProvider(
 		llm.WithAPIKey(apiKey),
 	)
 	if err != nil {
@@ -32,7 +32,6 @@ func main() {
 	// Example 1: Basic completion
 	fmt.Println("=== Example 1: Basic Completion ===")
 	req := &llm.CompletionRequest{
-		Model:        "deepseek-chat",
 		Instructions: "You are a helpful assistant.",
 		Messages: []*llm.ModelMessage{
 			{
@@ -41,7 +40,10 @@ func main() {
 			},
 		},
 	}
-
+	model, err := provider.NewCompletionModel("deepseek-chat")
+	if err != nil {
+		log.Fatalf("Failed to create DeepSeek model: %v", err)
+	}
 	resp, err := model.Complete(ctx, req)
 	if err != nil {
 		log.Fatalf("Completion failed: %v", err)

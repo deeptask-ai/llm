@@ -34,13 +34,15 @@ type OpenRouterModelsResponse struct {
 	Data []OpenRouterModelInfo `json:"data"`
 }
 
-type OpenRouterModel struct {
-	*openai.OpenAICompletionModel
+type OpenRouterModelProvider struct {
+	*openai.OpenAIModelProvider
 	models map[string]OpenRouterModelInfo
 	apiKey string
 }
 
-func NewOpenRouterModel(opts ...llm.ModelOption) (*OpenRouterModel, error) {
+var _ llm.ModelProvider = (*OpenRouterModelProvider)(nil)
+
+func NewOpenRouterModelProvider(opts ...llm.ModelOption) (*OpenRouterModelProvider, error) {
 	config := llm.ApplyOptions(opts)
 
 	if config.APIKey == "" {
@@ -49,6 +51,7 @@ func NewOpenRouterModel(opts ...llm.ModelOption) (*OpenRouterModel, error) {
 
 	// Build request options list
 	requestOpts := []option.RequestOption{}
+	requestOpts = append(requestOpts, option.WithAPIKey(config.APIKey))
 
 	// Set base URL (use default if not provided)
 	baseURL := config.BaseURL
@@ -60,62 +63,53 @@ func NewOpenRouterModel(opts ...llm.ModelOption) (*OpenRouterModel, error) {
 	// Append any custom options
 	requestOpts = append(requestOpts, config.Options...)
 
+	models, err := loadModels(config.APIKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load models: %w", err)
+	}
 	// Create the completion model with OpenRouter's API endpoint
-	completionModel, err := openai.NewOpenAICompletionModel(config.APIKey, requestOpts...)
+	openAIModelProvider, err := openai.NewBaseOpenAIModelProvider("openrouter", models, requestOpts)
 	if err != nil {
 		return nil, err
 	}
 
-	provider := &OpenRouterModel{
-		OpenAICompletionModel: completionModel,
-		models:                make(map[string]OpenRouterModelInfo),
-		apiKey:                config.APIKey,
+	provider := &OpenRouterModelProvider{
+		OpenAIModelProvider: openAIModelProvider,
+		apiKey:              config.APIKey,
 	}
 
-	if err := provider.loadModels(); err != nil {
-		return nil, fmt.Errorf("failed to load models: %w", err)
-	}
 	return provider, nil
 }
 
 // loadModels fetches all available models from OpenRouter API
-func (p *OpenRouterModel) loadModels() error {
+func loadModels(apiKey string) ([]*llm.ModelInfo, error) {
 	req, err := http.NewRequest("GET", "https://openrouter.ai/api/v1/models", nil)
 	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
+		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	req.Header.Set("Authorization", "Bearer "+p.apiKey)
+	req.Header.Set("Authorization", "Bearer "+apiKey)
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed to make request: %w", err)
+		return nil, fmt.Errorf("failed to make request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("API request failed with status: %d", resp.StatusCode)
+		return nil, fmt.Errorf("API request failed with status: %d", resp.StatusCode)
 	}
 
 	var modelsResponse OpenRouterModelsResponse
 	if err := json.NewDecoder(resp.Body).Decode(&modelsResponse); err != nil {
-		return fmt.Errorf("failed to decode response: %w", err)
+		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
-	for _, model := range modelsResponse.Data {
-		p.models[model.ID] = model
-	}
-
-	return nil
-}
-
-// SupportedModels returns all available models from OpenRouter
-func (p *OpenRouterModel) SupportedModels() []*llm.ModelInfo {
 	var models []*llm.ModelInfo
 
-	for _, model := range p.models {
+	for _, model := range modelsResponse.Data {
 		modelInfo := &llm.ModelInfo{
 			ID:   model.ID,
 			Name: model.Name,
@@ -133,32 +127,5 @@ func (p *OpenRouterModel) SupportedModels() []*llm.ModelInfo {
 		models = append(models, modelInfo)
 	}
 
-	return models
-}
-
-// getModelInfo returns the ModelInfo for a given model from OpenRouter's model list
-func (p *OpenRouterModel) getModelInfo(modelID string) *llm.ModelInfo {
-	openRouterModel, exists := p.models[modelID]
-	if !exists {
-		return nil
-	}
-
-	return &llm.ModelInfo{
-		ID:   openRouterModel.ID,
-		Name: openRouterModel.Name,
-		Pricing: llm.ModelPricing{
-			Prompt:            openRouterModel.Pricing.Prompt,
-			Completion:        openRouterModel.Pricing.Completion,
-			Request:           openRouterModel.Pricing.Request,
-			Image:             openRouterModel.Pricing.Image,
-			WebSearch:         openRouterModel.Pricing.WebSearch,
-			InternalReasoning: openRouterModel.Pricing.InternalReasoning,
-			InputCacheRead:    openRouterModel.Pricing.InputCacheRead,
-			InputCacheWrite:   openRouterModel.Pricing.InputCacheWrite,
-		},
-	}
-}
-
-func (p *OpenRouterModel) Name() string {
-	return "openrouter"
+	return models, nil
 }

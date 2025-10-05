@@ -6,7 +6,6 @@ import (
 
 // CompletionModel defines the interface for text completion operations
 type CompletionModel interface {
-	BaseModel
 	// StreamComplete generates streaming content from the model
 	StreamComplete(ctx context.Context, req *CompletionRequest) (StreamCompletionResponse, error)
 	// Complete generates complete content from the model
@@ -30,9 +29,7 @@ const (
 
 type CompletionRequest struct {
 	Instructions string
-	Model        string
 	Messages     []*ModelMessage
-	Options      []CompletionOption
 }
 
 // StreamModelResponse represents a stream of API chunks

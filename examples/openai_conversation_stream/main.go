@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/easyagent-dev/llm"
-	"github.com/easyagent-dev/llm/models"
+	"github.com/easyagent-dev/llm/providers"
 	"log"
 	"os"
 )
@@ -20,7 +20,7 @@ func main() {
 	}
 
 	// Create OpenAI completion model
-	model, err := models.NewOpenAIConversationModel(
+	provider, err := providers.NewOpenAIModelProvider(
 		llm.WithAPIKey(apiKey),
 	)
 	if err != nil {
@@ -32,16 +32,15 @@ func main() {
 	// Example 1: Basic streaming
 	fmt.Println("=== Example 1: Basic Streaming ===")
 	req := &llm.ConversationRequest{
-		Model: "o4-mini",
 		Input: "You are a helpful assistant.",
-		Options: []llm.ResponseOption{
-			llm.WithReasoningSummary("concise"),
-			llm.WithOptions(
-				llm.WithReasoningEffort(llm.ReasoningEffortLow),
-			),
-		},
 	}
-
+	model, err := provider.NewConversationModel("gpt-4o-mini", llm.WithReasoningSummary("concise"),
+		llm.WithOptions(
+			llm.WithReasoningEffort(llm.ReasoningEffortLow),
+		))
+	if err != nil {
+		log.Fatalf("Failed to create DeepSeek model: %v", err)
+	}
 	stream, err := model.StreamResponse(ctx, req)
 	if err != nil {
 		log.Fatalf("Stream failed: %v", err)

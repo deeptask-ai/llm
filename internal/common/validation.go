@@ -30,11 +30,6 @@ func ValidateCompletionRequest(req *llm.CompletionRequest) error {
 		return llm.NewValidationError("request", "cannot be nil", nil)
 	}
 
-	// Validate model
-	if req.Model == "" {
-		return llm.NewValidationError("model", "cannot be empty", "")
-	}
-
 	// Validate messages
 	if len(req.Messages) == 0 {
 		return llm.NewValidationError("messages", "must contain at least one message", nil)
@@ -42,14 +37,6 @@ func ValidateCompletionRequest(req *llm.CompletionRequest) error {
 
 	for i, msg := range req.Messages {
 		if err := validateMessage(msg, i); err != nil {
-			return err
-		}
-	}
-
-	// Validate options if provided
-	if len(req.Options) > 0 {
-		config := llm.ApplyCompletionOptions(req.Options)
-		if err := ValidateCompletionOptions(config); err != nil {
 			return err
 		}
 	}

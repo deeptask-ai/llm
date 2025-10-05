@@ -6,7 +6,6 @@ import (
 
 // EmbeddingModel defines the interface for embedding generation operations
 type EmbeddingModel interface {
-	BaseModel
 	// GenerateEmbeddings generates embeddings from input text
 	GenerateEmbeddings(ctx context.Context, req *EmbeddingRequest) (*EmbeddingResponse, error)
 }

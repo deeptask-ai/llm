@@ -4,8 +4,8 @@
 package azure
 
 import (
-	"github.com/easymvp-ai/llm"
-	"github.com/easymvp-ai/llm/internal/providers/openai"
+	"github.com/easyagent-dev/llm"
+	"github.com/easyagent-dev/llm/internal/providers/openai"
 	"github.com/openai/openai-go/v3/option"
 )
 

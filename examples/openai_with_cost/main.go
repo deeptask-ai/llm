@@ -6,11 +6,11 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/easymvp-ai/llm/openai"
+	"github.com/easyagent-dev/llm/openai"
 	"log"
 	"os"
 
-	"github.com/easymvp-ai/llm"
+	"github.com/easyagent-dev/llm"
 )
 
 func main() {

@@ -4,8 +4,8 @@
 package gemini
 
 import (
-	"github.com/easymvp-ai/llm"
-	"github.com/easymvp-ai/llm/internal/providers/gemini"
+	"github.com/easyagent-dev/llm"
+	"github.com/easyagent-dev/llm/internal/providers/gemini"
 )
 
 // NewGeminiModel creates a new Gemini model that supports llm

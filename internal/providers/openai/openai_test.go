@@ -4,7 +4,7 @@
 package openai
 
 import (
-	"github.com/easymvp-ai/llm"
+	"github.com/easyagent-dev/llm"
 	"testing"
 
 	"github.com/openai/openai-go/v3/option"

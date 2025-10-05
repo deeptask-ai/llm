@@ -5,7 +5,7 @@ package common
 
 import (
 	"fmt"
-	"github.com/easymvp-ai/llm"
+	"github.com/easyagent-dev/llm"
 	"net/url"
 	"strings"
 )

@@ -77,7 +77,7 @@ type ModelArtifact struct {
 type ToolCall struct {
 	ID           string
 	Name         string
-	Input        any
+	Input        map[string]any
 	Output       any
 	ErrorMessage *string
 }

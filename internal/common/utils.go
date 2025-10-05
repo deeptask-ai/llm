@@ -7,7 +7,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/easymvp-ai/llm"
+	"github.com/easyagent-dev/llm"
 	"strconv"
 	"sync"
 	"text/template"

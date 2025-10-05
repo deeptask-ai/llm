@@ -4,8 +4,8 @@
 package openai
 
 import (
-	"github.com/easymvp-ai/llm"
-	"github.com/easymvp-ai/llm/internal/providers/openai"
+	"github.com/easyagent-dev/llm"
+	"github.com/easyagent-dev/llm/internal/providers/openai"
 )
 
 // NewOpenAIModel creates a new OpenAI model that supports llm, embedding, and image generation

@@ -4,8 +4,8 @@
 package claude
 
 import (
-	"github.com/easymvp-ai/llm"
-	"github.com/easymvp-ai/llm/internal/providers/claude"
+	"github.com/easyagent-dev/llm"
+	"github.com/easyagent-dev/llm/internal/providers/claude"
 )
 
 // NewClaudeModel creates a new Claude model that supports llm

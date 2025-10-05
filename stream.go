@@ -31,6 +31,7 @@ type StreamTextChunk struct {
 func (c StreamTextChunk) Type() StreamChunkType {
 	return TextChunkType
 }
+
 func (c StreamTextChunk) String() string {
 	return c.Text
 }

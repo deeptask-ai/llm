@@ -1,4 +1,4 @@
-module github.com/easymvp-ai/llm
+module github.com/easyagent-dev/llm
 
 go 1.24.4
 

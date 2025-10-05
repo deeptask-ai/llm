@@ -4,8 +4,8 @@
 package openrouter
 
 import (
-	"github.com/easymvp-ai/llm"
-	"github.com/easymvp-ai/llm/internal/providers/openrouter"
+	"github.com/easyagent-dev/llm"
+	"github.com/easyagent-dev/llm/internal/providers/openrouter"
 )
 
 // NewOpenRouterModel creates a new OpenRouter model that supports llm

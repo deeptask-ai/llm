@@ -1,7 +1,7 @@
 // Copyright 2025 The DeepTask Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package openai
+package models
 
 import (
 	"github.com/easyagent-dev/llm"

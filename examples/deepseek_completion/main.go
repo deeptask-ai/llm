@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/easyagent-dev/llm"
-	"github.com/easyagent-dev/llm/internal/providers/deepseek"
+	"github.com/easyagent-dev/llm/models"
 	"log"
 	"os"
 )
@@ -20,7 +20,7 @@ func main() {
 	}
 
 	// Create DeepSeek model client
-	model, err := deepseek.NewDeepSeekModel(
+	model, err := models.NewDeepSeekModel(
 		llm.WithAPIKey(apiKey),
 	)
 	if err != nil {

@@ -6,7 +6,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/easyagent-dev/llm/openai"
+	"github.com/easyagent-dev/llm/models"
 	"log"
 	"os"
 
@@ -21,7 +21,7 @@ func main() {
 	}
 
 	// Create OpenAI model client
-	model, err := openai.NewOpenAIModel(
+	model, err := models.NewOpenAIModel(
 		llm.WithAPIKey(apiKey),
 	)
 	if err != nil {

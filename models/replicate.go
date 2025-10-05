@@ -1,4 +1,4 @@
-package replicate
+package models
 
 import (
 	"github.com/easyagent-dev/llm"

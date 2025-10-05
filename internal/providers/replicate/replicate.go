@@ -46,35 +46,37 @@ func (m *ReplicateImageModel) Name() string {
 
 // SupportedModels returns a list of supported models
 func (m *ReplicateImageModel) SupportedModels() []*llm.ModelInfo {
-	return []*llm.ModelInfo{
-		{
-			ID:   "black-forest-labs/flux-schnell",
-			Name: "FLUX Schnell",
-			Pricing: llm.ModelPricing{
-				Image: "0.003",
-			},
-			Input:  []llm.ModelMediaType{llm.ModelMediaTypeText},
-			Output: []llm.ModelMediaType{llm.ModelMediaTypeImage},
-		},
-		{
-			ID:   "black-forest-labs/flux-pro",
-			Name: "FLUX Pro",
-			Pricing: llm.ModelPricing{
-				Image: "0.055",
-			},
-			Input:  []llm.ModelMediaType{llm.ModelMediaTypeText},
-			Output: []llm.ModelMediaType{llm.ModelMediaTypeImage},
-		},
-		{
-			ID:   "stability-ai/sdxl",
-			Name: "Stable Diffusion XL",
-			Pricing: llm.ModelPricing{
-				Image: "0.0025",
-			},
-			Input:  []llm.ModelMediaType{llm.ModelMediaTypeText},
-			Output: []llm.ModelMediaType{llm.ModelMediaTypeImage},
-		},
+	ctx := context.Background()
+
+	// List models from Replicate API
+	page, err := m.client.ListModels(ctx)
+	if err != nil {
+		// Return empty list on error
+		return []*llm.ModelInfo{}
 	}
+
+	// Convert replicate models to llm.ModelInfo
+	var models []*llm.ModelInfo
+	for _, model := range page.Results {
+		// Create model ID from owner and name
+		modelID := fmt.Sprintf("%s/%s", model.Owner, model.Name)
+
+		// Get version ID if available
+		if model.LatestVersion != nil {
+			modelID = model.LatestVersion.ID
+		}
+
+		modelInfo := &llm.ModelInfo{
+			ID:     modelID,
+			Name:   model.Name,
+			Input:  []llm.ModelMediaType{llm.ModelMediaTypeText},
+			Output: []llm.ModelMediaType{llm.ModelMediaTypeImage},
+		}
+
+		models = append(models, modelInfo)
+	}
+
+	return models
 }
 
 // GenerateImage generates an image from a text prompt

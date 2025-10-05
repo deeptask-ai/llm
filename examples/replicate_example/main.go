@@ -6,11 +6,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/easyagent-dev/llm"
+	"github.com/easyagent-dev/llm/models"
 	"log"
 	"os"
-
-	"github.com/easyagent-dev/llm"
-	"github.com/easyagent-dev/llm/internal/providers/replicate"
 )
 
 func main() {
@@ -21,7 +20,7 @@ func main() {
 	}
 
 	// Create Replicate image model client
-	model, err := replicate.NewReplicateImageModel(apiKey)
+	model, err := models.NewReplicateImageModel(apiKey)
 	if err != nil {
 		log.Fatalf("Failed to create Replicate model: %v", err)
 	}

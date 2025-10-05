@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/easyagent-dev/llm"
-	"github.com/easyagent-dev/llm/openai"
+	"github.com/easyagent-dev/llm/models"
 	"log"
 	"os"
 )
@@ -20,7 +20,7 @@ func main() {
 	}
 
 	// Create OpenAI completion model
-	model, err := openai.NewOpenAIConversationModel(
+	model, err := models.NewOpenAIConversationModel(
 		llm.WithAPIKey(apiKey),
 	)
 	if err != nil {

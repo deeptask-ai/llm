@@ -75,11 +75,13 @@ type ModelArtifact struct {
 }
 
 type ToolCall struct {
-	ID           string
-	Name         string
-	Input        map[string]any
-	Output       any
-	ErrorMessage *string
+	ID           string         `json:"id"`
+	Name         string         `json:"name"`
+	Input        map[string]any `json:"input"`
+	Output       any            `json:"output"`
+	ErrorMessage *string        `json:"errorMessage"`
+	StartAt      time.Time      `json:"startAt"`
+	EndAt        time.Time      `json:"endAt"`
 }
 
 type ModelMessage struct {

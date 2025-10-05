@@ -49,7 +49,7 @@ func NewClaudeModelProvider(opts ...llm.ModelOption) (*ClaudeModelProvider, erro
 	}
 
 	// Create the completion model with Claude's API endpoint and required headers
-	provider, err := openai.NewBaseOpenAIModelProvider("claude", config.APIKey, models, requestOpts...)
+	provider, err := openai.NewBaseOpenAIModelProvider("claude", models, requestOpts)
 	if err != nil {
 		return nil, err
 	}
